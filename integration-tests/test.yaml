@@ -108,17 +108,7 @@ spec:
               valueFrom:
                 secretKeyRef:
                   name: "$(tasks.provision-env.results.secretRef)"
-                  key: kubeconfig
-            - name: CLIENT_ID
-              valueFrom:
-                secretKeyRef:
-                  name: ocm
-                  key: client_id
-            - name: CLIENT_SEC
-              valueFrom:
-                secretKeyRef:
-                  name: ocm
-                  key: client_secret                      
+                  key: kubeconfig                    
           script: |
             #!/usr/bin/env bash
             cat <<< "$KUBECONFIG_VALUE" > /tmp/cfg
