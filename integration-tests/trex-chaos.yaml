@@ -183,6 +183,8 @@ spec:
               value: '{io.kompose.service: trex-db}'
             - name: DURATION
               value: '60'
+            - name: DISTRIBUTION
+              value: 'openshift'              
             - name: KUBECONFIG_VALUE
               valueFrom:
                 secretKeyRef:
