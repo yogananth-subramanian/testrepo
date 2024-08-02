@@ -170,7 +170,7 @@ spec:
             echo -n ${HOST} | tee $(results.APP_URL.path)
             set -x
             oc config view --minify | grep namespace
-            namespace=$(oc config view --minify | grep namespace| cut -d" " -f6)
+            namespace=$(oc config view --minify | grep namespace:| cut -d" " -f6)
             echo -n $namespace | tee $(results.namespace.path)            
     - name: chaos-test  
       taskSpec:       
