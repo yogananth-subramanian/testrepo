@@ -195,7 +195,6 @@ spec:
             cat <<< "$KUBECONFIG_VALUE" > /tmp/cfg
             cat /tmp/cfg
             export KUBECONFIG=/tmp/cfg
-            cat /home/krkn/kraken/config/config.yaml.template            
             /home/krkn/run.sh         
       runAfter:
         - deploy-app                  
