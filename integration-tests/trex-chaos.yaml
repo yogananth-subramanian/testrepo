@@ -173,7 +173,7 @@ spec:
     - name: chaos-test  
       taskSpec:       
         steps:
-        - image: quay.io/yogananth_subramanian/krkn-hub@sha256:8b810e28180522faad53557ae9456009f6247af350aab0542db2320124546924
+        - image: quay.io/yogananth_subramanian/krkn-hub@sha256:24f7ee71c9ff3f91786c34daaee4420b15f15d2bf0a06ec35a3b630e997a640b
           imagePullPolicy: Always
           name: app-test
           env:
