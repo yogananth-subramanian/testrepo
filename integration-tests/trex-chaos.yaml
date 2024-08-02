@@ -179,6 +179,8 @@ spec:
           env:
             - name: NAMESPACE
               value: "$(tasks.deploy-app.results.namespace)"
+            - name: KRKN_KUBE_CONFIG
+              value: "/tmp/cfg"              
             - name: POD_SELECTOR
               value: '{io.kompose.service: trex-db}'
             - name: DURATION
