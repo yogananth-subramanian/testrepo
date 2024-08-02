@@ -160,7 +160,37 @@ spec:
 
             echo ${HOST} > /tekton/home/endpoint_url            
             echo -n ${HOST} | tee $(results.APP_URL.path)
-
+    - name: perf-benchmark
+      params:
+        - name: url
+          value: $(tasks.deploy-app.results.APP_URL)
+      taskSpec:
+        params:
+          - name: url        
+        steps:
+        - image: grafana/k6
+          name: run-perf
+          env:
+            - name: OCM_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: ocm
+                  key: ocmtoken          
+          script: |
+            #!/usr/bin/env sh
+            export
+            echo "Transform result to json format"
+            wget -O /tmp/ocm https://github.com/openshift-online/ocm-cli/releases/download/v0.1.65/ocm-linux-amd64
+            chmod +x /tmp/ocm
+            echo ${OCM_TOKEN}
+            /tmp/ocm login --token=${OCM_TOKEN} --url=http://$(params.url)
+            export BASE_URL=http://$(params.url)
+            wget -O /tmp/script.js https://raw.githubusercontent.com/yogananth-subramanian/rh-trex/main/.tekton/rhtap-perf-k6-test.js
+            echo -n `/tmp/ocm token`>/tmp/token
+            k6 run /tmp/script.js
+            cat /workspace/output.json
+      runAfter:
+        - deploy-app                  
   finally:
     - name: cleanup  
       params:
