@@ -81,7 +81,7 @@ spec:
           value: $(params.NAMESPACE)
         - name: PORT
           value: $(params.PORT)        
-      taskSpec:
+      taskSpec:  
         params:
           - name: SNAPSHOT
             description: Expected output of the application endpoint
@@ -92,6 +92,9 @@ spec:
             name: PORT
             description: Application endpoint Port          
         results:
+          - name: namespace
+            description: namespace
+            type: string         
           - name: APP_URL
             description: APP URL
           - name: test_name
@@ -174,7 +177,7 @@ spec:
           name: app-test
           env:
             - name: NAMESPACE
-              value: "$(tasks.provision-env.results.namespace)"
+              value: "$(tasks.deploy-app.results.namespace)"
             - name: POD_SELECTOR
               value: '{io.kompose.service: trex-db}'
             - name: DURATION
