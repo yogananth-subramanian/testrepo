@@ -92,6 +92,9 @@ spec:
             name: PORT
             description: Application endpoint Port           
         results:
+          - name: namespace
+            description: namespace
+            type: string              
           - name: APP_URL
             description: APP URL
           - name: test_name
