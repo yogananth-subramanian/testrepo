@@ -45,6 +45,10 @@ spec:
           value: $(params.ownerUid)
         - name: TIER_NAME
           value: konflux-eaas
+        - name: PIPELINERUN_NAME
+          value: "$(context.pipelineRun.name)"
+        - name: PIPELINERUN_UID
+          value: "$(context.pipelineRun.uid)"          
       script: |
         #!/bin/bash
         set -ex
