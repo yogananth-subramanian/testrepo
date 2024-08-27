@@ -36,7 +36,7 @@ spec:
       image: registry.redhat.io/openshift4/ose-cli:4.13@sha256:73df37794ffff7de1101016c23dc623e4990810390ebdabcbbfa065214352c7c
       env:
         - name: KONFLUXNAMESPACE
-          value: $(context.taskRun.namespace)
+          value: "$(context.pipelineRun.namespace)"
         - name: OWNER_KIND
           value: $(params.ownerKind)
         - name: OWNER_NAME
