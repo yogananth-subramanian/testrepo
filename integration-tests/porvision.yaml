@@ -70,7 +70,9 @@ spec:
             name: $OWNER_NAME
             uid: $OWNER_UID
         spec:
-          tierName: konflux-eaas        
+          tierName: konflux-eaas
+          targetClusterRoles:
+          - cluster-role.toolchain.dev.openshift.com/eaas          
         EOF
         cat  space_request.yaml
         SPACEREQUEST_NAME=$(oc create -f space_request.yaml -o=jsonpath='{.metadata.name}')
