@@ -36,7 +36,7 @@ spec:
       image: registry.redhat.io/openshift4/ose-cli:4.13@sha256:73df37794ffff7de1101016c23dc623e4990810390ebdabcbbfa065214352c7c
       env:
         - name: KONFLUXNAMESPACE
-          value: "$(context.pipelineRun.namespace)"
+          value: "$(context.taskRun.namespace)"
         - name: OWNER_KIND
           value: $(params.ownerKind)
         - name: OWNER_NAME
@@ -53,6 +53,10 @@ spec:
         #!/bin/bash
         set -ex
         set -o pipefail
+        echo $OWNER_NAME
+        echo $OWNER_UID
+        echo $PIPELINERUN_NAME
+        echo $PIPELINERUN_UID
 
         cat <<EOF > space_request.yaml
         apiVersion: toolchain.dev.openshift.com/v1alpha1
@@ -63,8 +67,8 @@ spec:
           ownerReferences:
           - apiVersion: tekton.dev/v1
             kind: PipelineRun
-            name: $PIPELINERUN_NAME
-            uid: $PIPELINERUN_UID
+            name: $OWNER_NAME
+            uid: $OWNER_UID
         spec:
           tierName: appstudio-env
         EOF
