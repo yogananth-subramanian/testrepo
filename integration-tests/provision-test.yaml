@@ -41,7 +41,7 @@ spec:
           - name: revision
             value: main
           - name: pathInRepo
-            value: integration-tests/porvision.yaml
+            value: integration-tests/provision-cluster.yaml
       params:
         - name: ownerName
           value: $(context.pipelineRun.name)
