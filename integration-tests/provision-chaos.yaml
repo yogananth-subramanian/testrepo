@@ -144,4 +144,6 @@ spec:
             script: |
               #!/usr/bin/env bash
               echo $KUBECONFIG
-              ls -l /credentials          
+              ls -l /credentials 
+              cat $KUBECONFIG
+              oc whoami         
