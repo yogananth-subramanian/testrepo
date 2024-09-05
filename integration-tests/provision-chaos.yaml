@@ -106,12 +106,16 @@ spec:
           value: "$(tasks.parse-metadata.results.component-container-image)"
         - name: namespace
           value: "$(params.NAMESPACE)"
+        - name: SNAPSHOT
+          value: $(params.SNAPSHOT)          
       taskSpec:
         params:
           - name: bundleImage
             type: string
           - name: namespace
             type: string
+          - name: SNAPSHOT
+            description: Expected output of the application endpoint            
         volumes:
           - name: credentials
             emptyDir: {}
@@ -138,6 +142,18 @@ spec:
             env:
               - name: KUBECONFIG
                 value: "/credentials/$(steps.get-kubeconfig.results.kubeconfig)"
+              - name: SNAPSHOT
+                value: $(params.SNAPSHOT)
+              - name: CLIENT_ID
+                valueFrom:
+                  secretKeyRef:
+                    name: ocm
+                    key: client_id
+              - name: CLIENT_SEC
+                valueFrom:
+                  secretKeyRef:
+                    name: ocm
+                    key: client_secret                                  
             volumeMounts:
               - name: credentials
                 mountPath: /credentials
@@ -146,4 +162,7 @@ spec:
               echo $KUBECONFIG
               ls -l /credentials 
               cat $KUBECONFIG
+              echo $SNAPSHOT
+              echo $CLIENT_ID
+              echo $CLIENT_SEC
               oc whoami         
