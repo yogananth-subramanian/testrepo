@@ -207,7 +207,9 @@ spec:
               - name: NAMESPACE
                 value: "default"
               - name: KUBECONFIG
-                value: "/credentials/$(steps.get-kubeconfig.results.kubeconfig)"                              
+                value: "/credentials/$(steps.get-kubeconfig.results.kubeconfig)"
+              - name: KRKN_KUBE_CONFIG
+                value: "/credentials/$(steps.get-kubeconfig.results.kubeconfig)"                                               
               - name: POD_SELECTOR
                 value: '{io.kompose.service: trex-db}'
               - name: DURATION
@@ -219,4 +221,5 @@ spec:
                 mountPath: /credentials                                                   
             script: |
               set -xv
+              export
               /home/krkn/run.sh                                             
