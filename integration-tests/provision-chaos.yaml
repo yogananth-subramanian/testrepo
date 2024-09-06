@@ -199,4 +199,24 @@ spec:
               # Check the application endpoint
               ENDPOINT_OUTPUT=$(curl -k http://${HOST}:${PORT})
               echo -e "The endpoint outputs the following:\n ${ENDPOINT_OUTPUT}"
-              echo -e "Snapshot output:\n ${SNAPSHOT}"                      
+              echo -e "Snapshot output:\n ${SNAPSHOT}"
+          - image: quay.io/yogananth_subramanian/krkn-hub@sha256:d4740420b166fe5ecb0814500ee34c2ec2da2c3c0c5b2411b71bc4418e79e793
+            imagePullPolicy: Always
+            name: app-test
+            env:
+              - name: NAMESPACE
+                value: "default"
+              - name: KUBECONFIG
+                value: "/credentials/$(steps.get-kubeconfig.results.kubeconfig)"                              
+              - name: POD_SELECTOR
+                value: '{io.kompose.service: trex-db}'
+              - name: DURATION
+                value: '60'
+              - name: DISTRIBUTION
+                value: 'openshift'              
+            volumeMounts:
+              - name: credentials
+                mountPath: /credentials                                                   
+            script: |
+              set -xv
+              /home/krkn/run.sh                                             
