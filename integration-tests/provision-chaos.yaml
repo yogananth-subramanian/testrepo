@@ -200,7 +200,7 @@ spec:
               ENDPOINT_OUTPUT=$(curl -k http://${HOST}:${PORT})
               echo -e "The endpoint outputs the following:\n ${ENDPOINT_OUTPUT}"
               echo -e "Snapshot output:\n ${SNAPSHOT}"
-          - image: quay.io/yogananth_subramanian/krkn-hub@sha256:d4740420b166fe5ecb0814500ee34c2ec2da2c3c0c5b2411b71bc4418e79e793
+          - image: quay.io/krkn-chaos/krkn-hub:application-outages
             imagePullPolicy: Always
             name: app-test
             env:
