@@ -98,7 +98,7 @@ spec:
                 value: "$(steps.pick-version.results.version)"
               - name: instanceType	
                 value: m5.large                 
-    - name: deploy-operator
+    - name: deploy-app-krkn
       runAfter:
         - provision-cluster
       params:
