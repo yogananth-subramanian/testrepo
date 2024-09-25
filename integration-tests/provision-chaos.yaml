@@ -226,7 +226,7 @@ spec:
               URL=$(oc get route thanos-querier --template='{{.spec.host}}' -n openshift-monitoring)
               echo $URL
               oc  get sa -n openshift-monitoring
-              TOKEN=$(oc --kubeconfig=/tmp/config create token prometheus-k8s  -n openshift-monitoring)
+              TOKEN=$(oc create token prometheus-k8s  -n openshift-monitoring)
               echo $TOKEN              
               QUERY="kube_pod_status_ready_time"
               start_time=$(date +%s)
