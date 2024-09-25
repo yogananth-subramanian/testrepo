@@ -222,4 +222,12 @@ spec:
             script: |
               set -xv
               export
-              /home/krkn/run.sh                                             
+              /home/krkn/run.sh
+              TOKEN=$(oc whoami -t)
+              URL=$(oc get route thanos-querier --template='{{.spec.host}}' -n openshift-monitoring)
+              echo $URL
+              QUERY="kube_persistentvolumeclaim_status_phase{phase='Bound'}"
+              start_time=$(date +%s)
+              Bearer_TOKEN="Authorization: Bearer $TOKEN"
+              start_promql="https://${URL}/api/v1/query_range?start=$(date +%s)&end=$(date +%s)&step=1m&format=csv"
+              curl  -k -H "$Bearer_TOKEN"   "$start_promql"  -d "query=$QUERY"
