@@ -223,10 +223,12 @@ spec:
               set -xv
               export
               /home/krkn/run.sh
-              TOKEN=$(oc whoami -t)
               URL=$(oc get route thanos-querier --template='{{.spec.host}}' -n openshift-monitoring)
               echo $URL
-              QUERY="kube_persistentvolumeclaim_status_phase{phase='Bound'}"
+              oc  get sa -n openshift-monitoring
+              TOKEN=$(oc --kubeconfig=/tmp/config create token prometheus-k8s  -n openshift-monitoring)
+              echo $TOKEN              
+              QUERY="kube_pod_status_ready_time"
               start_time=$(date +%s)
               Bearer_TOKEN="Authorization: Bearer $TOKEN"
               start_promql="https://${URL}/api/v1/query_range?start=$(date +%s)&end=$(date +%s)&step=1m&format=csv"
