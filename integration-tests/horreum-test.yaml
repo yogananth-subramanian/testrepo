@@ -1,0 +1,41 @@
+apiVersion: tekton.dev/v1beta1
+kind: Pipeline
+metadata:
+  name: integration-test-app
+spec:
+  description: >-
+    Expects a Snapshot of a simple application with endpoint containing the expected output to be deployed on an environment. 
+    A secret containing the kubeconfig for the environment needs to be mounted via the cluster-credentials workspace binding.
+    The route to the single component is expected to have the same name as the component (default appstudio behavior).
+  params:
+    - description: 'Snapshot of the application'
+      name: SNAPSHOT
+      default: '{"components": [{"name":"test-app", "containerImage": "quay.io/example/repo:latest"}]}'
+      type: string
+    - description: 'Namespace where the application is running'
+      name: NAMESPACE
+      default: "default"
+      type: string
+    - description: 'Application endpoint port'
+      name: PORT
+      default: ""
+      type: string
+    - description: 'Horreum Test Name'
+      name: HR_TEST_NAME
+      default: ""
+      type: string      
+    - description: 'Horreum regression variable'
+      name: HR_REG_VAR
+      default: ""
+      type: string        
+  tasks:
+    - name: provision-env
+      taskSpec:
+        steps:
+          - name: horreum-test
+            image: quay.io/yogananth_subramanian/curl-yq-jq
+            script: |
+              #!/bin/bash
+              set -ex
+              set -o pipefail
+              curl 'https://horreum.corp.redhat.com/api/test?direction=Ascending' -k -s -v -X GET -H 'Authorization: Bearer '           
