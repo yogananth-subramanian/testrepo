@@ -38,5 +38,5 @@ spec:
               #!/bin/bash
               set -ex
               set -o pipefail
-              curl 'https://horreum.corp.redhat.com/api/config/keycloak'
+              curl 'https://horreum.corp.redhat.com/api/config/keycloak' -k
               curl 'https://horreum.corp.redhat.com/api/test?direction=Ascending' -k -s -v -X GET -H 'Authorization: Bearer '
