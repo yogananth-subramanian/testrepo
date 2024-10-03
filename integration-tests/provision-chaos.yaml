@@ -222,14 +222,65 @@ spec:
             script: |
               set -xv
               export
-              /home/krkn/run.sh
-              URL=$(oc get route thanos-querier --template='{{.spec.host}}' -n openshift-monitoring)
-              echo $URL
-              oc  get sa -n openshift-monitoring
-              TOKEN=$(oc create token prometheus-k8s  -n openshift-monitoring)
-              echo $TOKEN              
-              QUERY="kube_pod_status_ready_time"
               start_time=$(date +%s)
+              /home/krkn/run.sh
+              TOKEN=$(oc create token prometheus-k8s  -n openshift-monitoring)
+              URL=$(oc get route thanos-querier --template='{{.spec.host}}' -n openshift-monitoring)
+              QUERY="kube_pod_status_phase{namespace='$NAMESPACE', phase='Running'} == 1 and kube_pod_status_phase{namespace='$NAMESPACE', phase='Running'} != nan"
               Bearer_TOKEN="Authorization: Bearer $TOKEN"
-              start_promql="https://${URL}/api/v1/query_range?start=$(date +%s)&end=$(date +%s)&step=1m&format=csv"
-              curl  -k -H "$Bearer_TOKEN"   "$start_promql"  -d "query=$QUERY"
+              start_promql="https://${URL}/api/v1/query_range?start=${start_time}&end=${start_time}&step=1m&format=csv"
+              end_promql="https://${URL}/api/v1/query_range?start=$(date +%s)&end=$(date +%s)&step=1m&format=csv"
+              
+              namespace="sum(kube_namespace_status_phase{namespace='$NAMESPACE',phase='Active'})"
+              deployment="sum(kube_deployment_status_condition{namespace='$NAMESPACE',condition='Available'})"
+              replicaset="count(kube_replicaset_status_ready_replicas{namespace='$NAMESPACE'})"
+              statefulset="sum(kube_statefulset_status_replicas_ready{namespace='$NAMESPACE'})"
+              service="sum(kube_service_info{namespace='$NAMESPACE'})"
+              network_policy="count(kube_networkpolicy_spec_egress_rules{namespace='$NAMESPACE'})"
+              persistent_volume="sum(kube_persistentvolumeclaim_status_phase{namespace='$NAMESPACE',phase='Bound'})"
+              pod="sum(kube_pod_status_phase{namespace='$NAMESPACE', phase='Running'} == 1 and kube_pod_status_phase{namespace='$NAMESPACE', phase='Running'} != nan)"
+
+              end_time=$(date +%s)
+              diff_time=$((end_time - start_time))
+              difference_in_minutes=$((diff_time/ 60))
+
+              for i in namespace deployment replicaset statefulset service network_policy persistent_volume pod;do
+                  old=$(curl -s -k -H "$Bearer_TOKEN"   "$start_promql"  -d "query=${!i}"|jq -r '.data.result[0].values[0][1]')
+                  new=$(curl -s -k -H "$Bearer_TOKEN"   "$end_promql"  -d "query=${!i}"|jq -r '.data.result[0].values[0][1]')
+                  if [[ $old == $new ]]; then
+                      echo "no change in ${i} count"
+                  else
+                      echo "Change in ${i} count"
+                  fi    
+              done
+
+
+              for i in $( curl -s -k -H "$Bearer_TOKEN"   "$start_promql"  -d "query=$QUERY"| jq -r '.data.result[].metric.pod'); do
+                  #oc delete pod  ${i} -n test1
+                  pod_query="kube_pod_info{namespace='test1',pod='$i'}"
+                  old=$(curl -s -k -H "$Bearer_TOKEN"   "$start_promql"  -d "query=$pod_query" | jq -r '.data.result[].metric.pod_ip')
+                  new=$(curl -s -k -H "$Bearer_TOKEN"   "$end_promql"  -d "query=$pod_query" | jq -r '.data.result[].metric.pod_ip')
+                  if [[ $old == $new ]]; then
+                      echo "no change in ip of the pod $i"
+                      a=1
+                  else
+                      echo "Change in ip of the pod $i"
+                      a=1
+                  fi
+                  old=$(curl -s -k -H "$Bearer_TOKEN"   "$start_promql"  -d "query=$pod_query" | jq -r '.data.result[].metric.host_ip')
+                  new=$(curl -s -k -H "$Bearer_TOKEN"   "$end_promql"  -d "query=$pod_query" | jq -r '.data.result[].metric.host_ip')
+                  if [[ $old == $new ]]; then
+                      echo "no change in host ip of the pod $i"
+                      a=1
+                  else
+                      echo "Change in host ip of the pod" $i
+                      a=1
+                  fi
+              done
+
+              for i in $( curl -s -k -H "$Bearer_TOKEN"   "$end_promql"  -d "query=$QUERY"| jq -r '.data.result[].metric.pod'); do
+                  kubectl logs -n $NAMESPACE $i  --since=${difference_in_minutes}m
+              done
+
+              kubectl get events -n $NAMESPACE -o json | jq --argjson timestamp "$start_time" '.items[] | select((.metadata.creationTimestamp | fromdateiso8601) >= $timestamp) | {timestamp: .metadata.creationTimestamp, type: .type, reason: .reason, message: .message}'        
+
