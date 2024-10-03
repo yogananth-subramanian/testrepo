@@ -220,7 +220,7 @@ spec:
               - name: credentials
                 mountPath: /credentials                                                   
             script: |
-              set -xv
+              set -x
               export
               start_time=$(date +%s)
               /home/krkn/run.sh
