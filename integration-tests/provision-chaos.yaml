@@ -16,6 +16,9 @@ spec:
       name: NAMESPACE
       default: default
       type: string
+    - name: chaostest
+      default: application-outages
+      type: string
   tasks:
     - name: parse-metadata
       taskRef:
