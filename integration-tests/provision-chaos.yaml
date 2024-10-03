@@ -107,7 +107,9 @@ spec:
         - name: namespace
           value: "$(params.NAMESPACE)"
         - name: SNAPSHOT
-          value: $(params.SNAPSHOT)          
+          value: $(params.SNAPSHOT)
+        - name: chaostest
+          value: application-outages       
       taskSpec:
         params:
           - name: bundleImage
@@ -200,7 +202,7 @@ spec:
               ENDPOINT_OUTPUT=$(curl -k http://${HOST}:${PORT})
               echo -e "The endpoint outputs the following:\n ${ENDPOINT_OUTPUT}"
               echo -e "Snapshot output:\n ${SNAPSHOT}"
-          - image: quay.io/krkn-chaos/krkn-hub:application-outages
+          - image: quay.io/krkn-chaos/krkn-hub:$(params.chaostest)
             imagePullPolicy: Always
             name: app-test
             env:
