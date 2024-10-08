@@ -215,18 +215,90 @@ spec:
                 value: "/credentials/$(steps.get-kubeconfig.results.kubeconfig)"
               - name: KRKN_KUBE_CONFIG
                 value: "/credentials/$(steps.get-kubeconfig.results.kubeconfig)"                                               
-              - name: POD_SELECTOR
-                value: '{io.kompose.service: trex-db}'
-              - name: DURATION
-                value: '60'
               - name: DISTRIBUTION
-                value: 'openshift'              
+                value: 'openshift'
+              - name: TEST
+                value: $(params.chaostest)                             
             volumeMounts:
               - name: credentials
                 mountPath: /credentials                                                   
             script: |
               set -x
               export
+              export DURATION=60
+              export DISTRIBUTION='openshift'
+              echo $TEST
+              test=$TEST
+
+              function get_pod_name(){
+                  readarray -t pod_array < <(oc get pods -n $NAMESPACE --field-selector=status.phase=Running -o custom-columns=:metadata.name --no-headers=true)
+                  random_index=$((RANDOM % ${#pod_array[@]}))
+                  pod_test=${pod_array[$random_index]}
+                  echo $pod_test    
+              }
+
+              function get_pod_label(){
+                  pod_test=$1
+                  output=$(kubectl get pods  $pod_test -n $NAMESPACE  -o custom-columns=:metadata.labels --no-headers=true)
+                  pod_label=''
+                  max=500;for i in $(echo $output | sed 's/^map\[//; s/\]$//'| sed 's/:/=/g');do min=$(kubectl get pods -l $i -n $NAMESPACE -o custom-columns=:metadata.name --no-headers=true|wc -l) ; if [[ min -eq 1  ]] || [[ min -le max  ]];then max=$min;pod_label=$i;fi;done;
+                  echo $pod_label
+              }
+
+              if [[ ${test} == 'application-outages'  ]] ;then
+                  echo "in app outage"
+                  pod_test=$(get_pod_name)
+                  export POD_SELECTOR=$(oc get pods -n $NAMESPACE $pod_test  -o jsonpath='{.metadata.labels}')
+                  echo $POD_SELECTOR
+              elif [[ ${test} == 'container-scenarios'  ]] ;then
+                  echo "in container-scenarios"
+                  pod_test=$(get_pod_name)
+                  export LABEL_SELECTOR=$(get_pod_label ${pod_test})
+                  echo $LABEL_SELECTOR
+                  readarray -t con_array < <(kubectl get pod  $pod_test -n $NAMESPACE -o jsonpath='{.status.containerStatuses[?(@.state.running)].name}')
+                  random_index=$((RANDOM % ${#con_array[@]}))
+                  export CONTAINER_NAME=${con_array[$random_index]}
+                  echo $CONTAINER_NAME    
+              elif [[ ${test} == 'pod-scenarios'  ]] ;then
+                  echo "in pod-scenarios"
+                  pod_test=$(get_pod_name)    
+                  export POD_LABEL=$(get_pod_label ${pod_test})
+                  echo $POD_LABEL    
+              elif [[ ${test} == 'service-disruption-scenarios'  ]] ;then
+                  echo "in service-disruption-scenarios"
+              elif [[ ${test} == 'pvc-scenarios'  ]] ;then
+                  echo "in pvc-scenarios"
+                  readarray -t pvc_array < <(kubectl get pvc -n $NAMESPACE -o jsonpath='{range .items[?(@.status.phase=="Bound")]}{.metadata.name}{"\n"}{end}')
+                  random_index=$((RANDOM % ${#pvc_array[@]}))
+                  export PVC_NAME=${pvc_array[$random_index]}
+                  echo $PVC_NAME     
+              elif [[ ${test} == 'time-scenarios'  ]] ;then
+                  echo "in time-scenarios"
+                  pod_test=$(get_pod_name)    
+                  export LABEL_SELECTOR=$(get_pod_label ${pod_test})
+                  echo $LABEL_SELECTOR    
+              elif [[ ${test} == 'pod-network-chaos'  ]] ;then
+                  echo "in pod-network-chaos"
+                  pod_test=$(get_pod_name)  
+                  export LABEL_SELECTOR=$(get_pod_label ${pod_test})
+                  echo $LABEL_SELECTOR    
+              elif [[ ${test} == 'node-cpu-hog'  ]] ;then
+                  echo "in node-cpu-hog"
+                  pod_test=$(get_pod_name)
+                  host_ip=$(oc get pods -n $NAMESPACE $pod_test  -o custom-columns=:status.hostIP --no-headers=true)     
+                  node_name=$(kubectl get nodes -o jsonpath='{range .items[*]}{.metadata.name}{" "}{.status.addresses[?(@.address=="$host_ip")].address}{"\n"}{end}' | grep $host_ip | awk '{print $1}')
+                  export NODE_SELECTORS="kubernetes.io/hostname=${node_name}"
+                  echo $NODE_SELECTORS
+              elif [[ ${test} == 'network-chaos'  ]] ;then
+                  echo "in network-chaos"
+                  pod_test=$(get_pod_name)
+                  host_ip=$(oc get pods -n $NAMESPACE $pod_test  -o custom-columns=:status.hostIP --no-headers=true)     
+                  export NODE_NAME=$(kubectl get nodes -o jsonpath='{range .items[*]}{.metadata.name}{" "}{.status.addresses[?(@.address=="$host_ip")].address}{"\n"}{end}' | grep $host_ip | awk '{print $1}')
+                  echo $NODE_NAME
+              else
+                  echo "invalid testcase name"
+                  exit 1
+              fi                 
               start_time=$(date +%s)
               /home/krkn/run.sh
               TOKEN=$(oc create token prometheus-k8s  -n openshift-monitoring)
@@ -262,7 +334,7 @@ spec:
 
               for i in $( curl -s -k -H "$Bearer_TOKEN"   "$start_promql"  -d "query=$QUERY"| jq -r '.data.result[].metric.pod'); do
                   #oc delete pod  ${i} -n test1
-                  pod_query="kube_pod_info{namespace='test1',pod='$i'}"
+                  pod_query="kube_pod_info{namespace='$NAMESPACE',pod='$i'}"
                   old=$(curl -s -k -H "$Bearer_TOKEN"   "$start_promql"  -d "query=$pod_query" | jq -r '.data.result[].metric.pod_ip')
                   new=$(curl -s -k -H "$Bearer_TOKEN"   "$end_promql"  -d "query=$pod_query" | jq -r '.data.result[].metric.pod_ip')
                   if [[ $old == $new ]]; then
