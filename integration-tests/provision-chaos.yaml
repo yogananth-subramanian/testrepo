@@ -232,6 +232,9 @@ spec:
 
               function get_pod_name(){
                   readarray -t pod_array < <(oc get pods -n $NAMESPACE --field-selector=status.phase=Running -o custom-columns=:metadata.name --no-headers=true)
+                  if [[ ${#pod_array[@]} -eq 0  ]] ;then
+                      exit 1
+                  fi                    
                   random_index=$((RANDOM % ${#pod_array[@]}))
                   pod_test=${pod_array[$random_index]}
                   echo $pod_test    
@@ -248,11 +251,19 @@ spec:
               if [[ ${test} == 'application-outages'  ]] ;then
                   echo "in app outage"
                   pod_test=$(get_pod_name)
+                  if [[ -z $pod_test ]] ; then
+                      echo "no pod found"
+                      exit 1
+                  fi                   
                   export POD_SELECTOR=$(oc get pods -n $NAMESPACE $pod_test  -o jsonpath='{.metadata.labels}')
                   echo $POD_SELECTOR
               elif [[ ${test} == 'container-scenarios'  ]] ;then
                   echo "in container-scenarios"
                   pod_test=$(get_pod_name)
+                  if [[ -z $pod_test ]] ; then
+                      echo "no pod found"
+                      exit 1
+                  fi                   
                   export LABEL_SELECTOR=$(get_pod_label ${pod_test})
                   echo $LABEL_SELECTOR
                   readarray -t con_array < <(kubectl get pod  $pod_test -n $NAMESPACE -o jsonpath='{.status.containerStatuses[?(@.state.running)].name}')
@@ -261,7 +272,11 @@ spec:
                   echo $CONTAINER_NAME    
               elif [[ ${test} == 'pod-scenarios'  ]] ;then
                   echo "in pod-scenarios"
-                  pod_test=$(get_pod_name)    
+                  pod_test=$(get_pod_name)
+                  if [[ -z $pod_test ]] ; then
+                      echo "no pod found"
+                      exit 1
+                  fi                       
                   export POD_LABEL=$(get_pod_label ${pod_test})
                   echo $POD_LABEL    
               elif [[ ${test} == 'service-disruption-scenarios'  ]] ;then
@@ -274,17 +289,29 @@ spec:
                   echo $PVC_NAME     
               elif [[ ${test} == 'time-scenarios'  ]] ;then
                   echo "in time-scenarios"
-                  pod_test=$(get_pod_name)    
+                  pod_test=$(get_pod_name)
+                  if [[ -z $pod_test ]] ; then
+                      echo "no pod found"
+                      exit 1
+                  fi                       
                   export LABEL_SELECTOR=$(get_pod_label ${pod_test})
                   echo $LABEL_SELECTOR    
               elif [[ ${test} == 'pod-network-chaos'  ]] ;then
                   echo "in pod-network-chaos"
-                  pod_test=$(get_pod_name)  
+                  pod_test=$(get_pod_name)
+                  if [[ -z $pod_test ]] ; then
+                      echo "no pod found"
+                      exit 1
+                  fi                     
                   export LABEL_SELECTOR=$(get_pod_label ${pod_test})
                   echo $LABEL_SELECTOR    
               elif [[ ${test} == 'node-cpu-hog'  ]] ;then
                   echo "in node-cpu-hog"
                   pod_test=$(get_pod_name)
+                  if [[ -z $pod_test ]] ; then
+                      echo "no pod found"
+                      exit 1
+                  fi                   
                   host_ip=$(oc get pods -n $NAMESPACE $pod_test  -o custom-columns=:status.hostIP --no-headers=true)     
                   node_name=$(kubectl get nodes -o jsonpath='{range .items[*]}{.metadata.name}{" "}{.status.addresses[?(@.address=="$host_ip")].address}{"\n"}{end}' | grep $host_ip | awk '{print $1}')
                   export NODE_SELECTORS="kubernetes.io/hostname=${node_name}"
@@ -292,6 +319,10 @@ spec:
               elif [[ ${test} == 'network-chaos'  ]] ;then
                   echo "in network-chaos"
                   pod_test=$(get_pod_name)
+                  if [[ -z $pod_test ]] ; then
+                      echo "no pod found"
+                      exit 1
+                  fi                   
                   host_ip=$(oc get pods -n $NAMESPACE $pod_test  -o custom-columns=:status.hostIP --no-headers=true)     
                   export NODE_NAME=$(kubectl get nodes -o jsonpath='{range .items[*]}{.metadata.name}{" "}{.status.addresses[?(@.address=="$host_ip")].address}{"\n"}{end}' | grep $host_ip | awk '{print $1}')
                   echo $NODE_NAME
