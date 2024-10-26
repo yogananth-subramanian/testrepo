@@ -5,21 +5,21 @@ spec:
     - name: pipepline-task1
       taskRef:
         resolver: git
-          params:
-            - name: url
-              value: https://github.com/yogananth-subramanian/testrepo
-            - name: revision
-              value: main
-            - name: pathInRepo
-              value: integration-tests/test-task.yaml
         params:
-          - default: output1
-            name: name
-            type: string          
-        matrix:
-          params:
-            - name: name
-              value: ["output1", "output2"]         
+          - name: url
+            value: https://github.com/yogananth-subramanian/testrepo
+          - name: revision
+            value: main
+          - name: pathInRepo
+            value: integration-tests/test-task.yaml
+      params:
+        - default: output1
+          name: name
+          type: string          
+      matrix:
+        params:
+          - name: name
+            value: ["output1", "output2"]         
 
  
 
