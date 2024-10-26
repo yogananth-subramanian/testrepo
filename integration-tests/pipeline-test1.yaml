@@ -9,6 +9,10 @@ spec:
           - default: output1
             name: name
             type: string
+        matrix:
+          params:
+            - name: name
+              value: ["output1", "output2"]          
         spec: null
         steps:
           - computeResources: {}
@@ -17,24 +21,7 @@ spec:
             script: |
               #!/bin/env bash
               echo "in pipeline $(params.name)"
-    - name: pipepline-task2
-      pipelineSpec:
-        tasks:
-          - name: task2
-            taskSpec:
-              metadata: {}
-              params:
-                - default: output2
-                  name: name
-                  type: string
-              spec: null
-              steps:
-                - computeResources: {}
-                  image: registry.access.redhat.com/ubi8/ubi
-                  name: step1
-                  script: |
-                    #!/bin/env bash
-                    echo "in pipeline $(params.name)"          
+ 
 
             
 
