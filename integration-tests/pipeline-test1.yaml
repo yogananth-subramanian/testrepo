@@ -12,9 +12,6 @@ spec:
             value: main
           - name: pathInRepo
             value: integration-tests/test-task.yaml
-      params:
-        - name: name
-          value: 'output1'
       matrix:
         params:
           - name: name
