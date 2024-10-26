@@ -13,13 +13,13 @@ spec:
           - name: pathInRepo
             value: integration-tests/test-task.yaml
       params:
-        - default: output1
-          name: name
-          type: string          
+        - name: name
+          value: 'output1'
       matrix:
         params:
           - name: name
             value: ["output1", "output2"]         
+        
 
  
 
