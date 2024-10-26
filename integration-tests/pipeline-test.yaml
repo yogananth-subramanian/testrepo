@@ -1,0 +1,19 @@
+apiVersion: tekton.dev/v1
+kind: Pipeline
+spec:
+  tasks:
+    - name: pipepline-task1
+      taskSpec:
+        metadata: {}
+        params:
+          - default: output1
+            name: name
+            type: string
+        spec: null
+        steps:
+          - computeResources: {}
+            image: registry.access.redhat.com/ubi8/ubi
+            name: step1
+            script: |
+              #!/bin/env bash
+              echo "in pipeline $(params.name)"
