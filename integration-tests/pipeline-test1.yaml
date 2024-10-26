@@ -1,30 +1,21 @@
-apiVersion: tekton.dev/v1beta1
-kind: Task
-metadata:
-  name: task1
-spec:
-  params:
-    - name: name
-      type: string
-  steps:
-    - name: step1
-      image: registry.access.redhat.com/ubi8/ubi
-      script: |
-        #!/bin/env bash
-        echo "in pipeline $(params.name)"        
----
 apiVersion: tekton.dev/v1
 kind: Pipeline
 spec:
   tasks:
     - name: pipepline-task1
       taskRef:
-        name: task1       
-        metadata: {}
+        resolver: git
+          params:
+            - name: url
+              value: https://github.com/yogananth-subramanian/testrepo
+            - name: revision
+              value: main
+            - name: pathInRepo
+              value: integration-tests/test-task.yaml
         params:
           - default: output1
             name: name
-            type: string
+            type: string          
         matrix:
           params:
             - name: name
