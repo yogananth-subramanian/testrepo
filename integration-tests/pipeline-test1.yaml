@@ -1,15 +1,26 @@
 apiVersion: tekton.dev/v1
-kind: PipelineRun
+kind: Pipeline
 spec:
-  pipelineRef:
-    resolver: git
-    params:
-    - name: url
-      value: https://github.com/yogananth-subramanian/testrepo
-    - name: revision
-      value: main
-    - name: pathInRepo
-      value: integration-tests/pipeline-test.yaml
+  tasks:
+    - name: security-scans
+      pipelineSpec:
+        tasks:
+          - name: scorecards
+            taskSpec:
+              metadata: {}
+              params:
+                - default: output1
+                  name: name
+                  type: string
+              spec: null
+              steps:
+                - computeResources: {}
+                  image: registry.access.redhat.com/ubi8/ubi
+                  name: step1
+                  script: |
+                    #!/bin/env bash
+                    echo "in pipeline $(params.name)"
+
 
 
  
