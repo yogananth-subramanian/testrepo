@@ -168,6 +168,8 @@ spec:
             oc expose --kubeconfig /tmp/cfg service trex
             oc get --kubeconfig /tmp/cfg all
             oc get --kubeconfig events
+            oc describe --kubeconfig pod -l app=trex
+            oc logs --kubeconfig -l app=trex
             ROUTE_NAME=$(oc get --kubeconfig /tmp/cfg routes trex -o name --insecure-skip-tls-verify)
             HOST=$(oc get --kubeconfig /tmp/cfg "${ROUTE_NAME}" -o jsonpath={.spec.host}  --insecure-skip-tls-verify)
             echo "Found target host ${HOST} for app ${APPLICATION_NAME}"
