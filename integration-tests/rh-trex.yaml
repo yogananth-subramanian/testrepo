@@ -177,10 +177,10 @@ spec:
             echo "Found target host ${HOST} for app ${APPLICATION_NAME}"
             
             # Check the application endpoint
-            ENDPOINT_OUTPUT=$(curl -k http://${HOST}:${PORT})
+            ENDPOINT_OUTPUT=$(curl -k http://${HOST})
             echo -e "The endpoint outputs the following:\n ${ENDPOINT_OUTPUT}"
             echo -e "Snapshot output:\n ${SNAPSHOT}"
-
+            set -x
             echo ${HOST} > /tekton/home/endpoint_url            
             echo -n ${HOST} | tee $(results.APP_URL.path)
             if [ -z $(params.HR_TEST_NAME) ]
