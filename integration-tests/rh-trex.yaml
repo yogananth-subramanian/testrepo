@@ -177,6 +177,7 @@ spec:
             echo "Found target host ${HOST} for app ${APPLICATION_NAME}"
             
             # Check the application endpoint
+            curl -k https://${HOST}
             ENDPOINT_OUTPUT=$(curl -k https://${HOST})
             echo -e "The endpoint outputs the following:\n ${ENDPOINT_OUTPUT}"
             echo -e "Snapshot output:\n ${SNAPSHOT}"
@@ -225,8 +226,9 @@ spec:
             wget -O /tmp/ocm https://github.com/openshift-online/ocm-cli/releases/download/v0.1.65/ocm-linux-amd64
             chmod +x /tmp/ocm
             echo ${OCM_TOKEN}
-            /tmp/ocm login --token=${OCM_TOKEN} --url=https://$(params.url)
+            /tmp/ocm login --token=${OCM_TOKEN} --url=https://$(params.url) --debug
             export BASE_URL=https://$(params.url)
+            echo $BASE_URL
             wget -O /tmp/script.js https://raw.githubusercontent.com/yogananth-subramanian/testrepo/refs/heads/main/integration-tests/rhtap-perf-k6-test.js
             echo -n `/tmp/ocm token`>/tmp/token
             k6 run /tmp/script.js
