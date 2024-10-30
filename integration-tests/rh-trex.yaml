@@ -227,7 +227,7 @@ spec:
             echo ${OCM_TOKEN}
             /tmp/ocm login --token=${OCM_TOKEN} --url=https://$(params.url)
             export BASE_URL=https://$(params.url)
-            wget -O /tmp/script.js https://raw.githubusercontent.com/yogananth-subramanian/rh-trex/main/.tekton/rhtap-perf-k6-test.js
+            wget -O /tmp/script.js https://raw.githubusercontent.com/yogananth-subramanian/testrepo/refs/heads/main/integration-tests/rhtap-perf-k6-test.js
             echo -n `/tmp/ocm token`>/tmp/token
             k6 run /tmp/script.js
             cat /workspace/output.json       
