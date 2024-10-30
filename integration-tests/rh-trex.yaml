@@ -172,7 +172,8 @@ spec:
             oc logs --kubeconfig /tmp/cfg -l app=trex
             #ROUTE_NAME=$(oc get --kubeconfig /tmp/cfg routes trex -o name --insecure-skip-tls-verify)
             test_namespace=$(oc --kubeconfig /tmp/cfg project -q)
-            HOST="trex.${test_namespace}.svc.cluster.local:8000"
+            #HOST="trex.${test_namespace}.svc.cluster.local:8000"
+            HOST="$(oc get service trex -o jsonpath='{.spec.clusterIP}'):8000"
             #HOST=$(oc get --kubeconfig /tmp/cfg "${ROUTE_NAME}" -o jsonpath={.spec.host}  --insecure-skip-tls-verify)
             echo "Found target host ${HOST} for app ${APPLICATION_NAME}"
             
@@ -181,7 +182,6 @@ spec:
             ENDPOINT_OUTPUT=$(curl -k https://${HOST})
             echo -e "The endpoint outputs the following:\n ${ENDPOINT_OUTPUT}"
             echo -e "Snapshot output:\n ${SNAPSHOT}"
-            set -x
             echo ${HOST} > /tekton/home/endpoint_url            
             echo -n ${HOST} | tee $(results.APP_URL.path)
             if [ -z $(params.HR_TEST_NAME) ]
@@ -231,7 +231,7 @@ spec:
             echo $BASE_URL
             wget -O /tmp/script.js https://raw.githubusercontent.com/yogananth-subramanian/testrepo/refs/heads/main/integration-tests/rhtap-perf-k6-test.js
             echo -n `/tmp/ocm token`>/tmp/token
-            k6 run /tmp/script.js
+            k6 run --http-debug /tmp/script.js
             cat /workspace/output.json       
       runAfter:
         - deploy-app
