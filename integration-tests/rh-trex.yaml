@@ -172,12 +172,12 @@ spec:
             oc logs --kubeconfig /tmp/cfg -l app=trex
             #ROUTE_NAME=$(oc get --kubeconfig /tmp/cfg routes trex -o name --insecure-skip-tls-verify)
             test_namespace=$(oc --kubeconfig /tmp/cfg project -q)
-            HOST="trex.${test_namespace}.svc.cluster.local"
+            HOST="trex.${test_namespace}.svc.cluster.local:8000"
             #HOST=$(oc get --kubeconfig /tmp/cfg "${ROUTE_NAME}" -o jsonpath={.spec.host}  --insecure-skip-tls-verify)
             echo "Found target host ${HOST} for app ${APPLICATION_NAME}"
             
             # Check the application endpoint
-            ENDPOINT_OUTPUT=$(curl -k http://${HOST})
+            ENDPOINT_OUTPUT=$(curl -k https://${HOST})
             echo -e "The endpoint outputs the following:\n ${ENDPOINT_OUTPUT}"
             echo -e "Snapshot output:\n ${SNAPSHOT}"
             set -x
@@ -225,8 +225,8 @@ spec:
             wget -O /tmp/ocm https://github.com/openshift-online/ocm-cli/releases/download/v0.1.65/ocm-linux-amd64
             chmod +x /tmp/ocm
             echo ${OCM_TOKEN}
-            /tmp/ocm login --token=${OCM_TOKEN} --url=http://$(params.url)
-            export BASE_URL=http://$(params.url)
+            /tmp/ocm login --token=${OCM_TOKEN} --url=https://$(params.url)
+            export BASE_URL=https://$(params.url)
             wget -O /tmp/script.js https://raw.githubusercontent.com/yogananth-subramanian/rh-trex/main/.tekton/rhtap-perf-k6-test.js
             echo -n `/tmp/ocm token`>/tmp/token
             k6 run /tmp/script.js
