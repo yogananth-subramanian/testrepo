@@ -142,5 +142,59 @@ spec:
                 value: "$(tasks.provision-cluster.results.clusterName)"
               - name: credentials
                 value: credentials
-
+    - name: deploy-app-krkn
+      runAfter:
+        - extract-kubeconfig
+      params:
+        - name: bundleImage
+          value: "$(tasks.parse-metadata.results.component-container-image)"
+        - name: namespace
+          value: "$(params.NAMESPACE)"
+        - name: SNAPSHOT
+          value: $(params.SNAPSHOT)
+        - name: chaostest
+          value: application-outages
+        - name: KUBECONFIG
+          value: "$(tasks.extract-kubeconfig.results.kubeconfig)"                   
+      taskSpec:
+        params:
+          - name: bundleImage
+            type: string
+          - name: namespace
+            type: string
+          - name: SNAPSHOT
+            description: Expected output of the application endpoint 
+          - name: KUBECONFIG
+            description: kube config                      
+        volumes:
+          - name: credentials
+            emptyDir: {}
+        steps:                
+          - name: operator-sdk-run-bundle
+            image: registry.redhat.io/openshift4/ose-cli:latest
+            env:
+              - name: KUBECONFIG
+                value: $(params.KUBECONFIG)
+              - name: SNAPSHOT
+                value: $(params.SNAPSHOT)
+              - name: CLIENT_ID
+                valueFrom:
+                  secretKeyRef:
+                    name: ocm
+                    key: client_id
+              - name: CLIENT_SEC
+                valueFrom:
+                  secretKeyRef:
+                    name: ocm
+                    key: client_secret                                  
+            volumeMounts:
+              - name: credentials
+                mountPath: /credentials
+            script: |
+              #!/usr/bin/env bash
+              echo $KUBECONFIG
+              echo $SNAPSHOT
+              echo $CLIENT_ID
+              echo $CLIENT_SEC
+              oc whoami 
 
