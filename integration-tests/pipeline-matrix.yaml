@@ -1,4 +1,6 @@
 apiVersion: tekton.dev/v1
+metadata:
+  name: pipepline-task1
 kind: Pipeline
 spec:
   tasks:
@@ -15,7 +17,10 @@ spec:
       matrix:
         params:
           - name: name
-            value: ["output1", "output2"]         
+            value: ["output1", "output2"]
+  taskRunSpecs:
+    - pipelineTaskName: pipepline-task1
+      maxConcurrency: 1  # Limits the number of parallel task runs to 2                     
         
 
  
