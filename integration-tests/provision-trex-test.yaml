@@ -101,7 +101,7 @@ spec:
                 value: "$(steps.pick-version.results.version)"
               - name: instanceType	
                 value: m5.large                 
-    - name: extract-kubeconfig
+    - name: deploy-app-krkn
       runAfter:
         - provision-cluster
       params:
@@ -120,7 +120,7 @@ spec:
           - name: namespace
             type: string
           - name: SNAPSHOT
-            description: Expected output of the application endpoint                
+            description: Expected output of the application endpoint            
         volumes:
           - name: credentials
             emptyDir: {}
@@ -142,6 +142,15 @@ spec:
                 value: "$(tasks.provision-cluster.results.clusterName)"
               - name: credentials
                 value: credentials
+            results:
+              - name: APP_URL
+                description: APP URL
+              - name: test_name
+                description: Test name
+              - name: reg_var
+                description: Regression variable             
+              - name: TEST_OUTPUT
+                description: Test output                 
           - name: operator-sdk-run-bundle
             image: registry.redhat.io/openshift4/ose-cli:latest
             env:
@@ -195,13 +204,13 @@ spec:
               oc apply  -f /tmp/templates/db-template.json
               sleep 120
               oc apply  -f /tmp/templates/secrets-template.json
-              oc apply  -f /tmp/templates/service-template.json
+              oc apply   -f /tmp/templates/service-template.json
               sleep 180
               #oc expose service trex
               oc get  all
               oc get  events
-              oc describe pod -l app=trex
-              oc logs -l app=trex
+              oc describe  pod -l app=trex
+              oc logs  -l app=trex
               #ROUTE_NAME=$(oc get  routes trex -o name --insecure-skip-tls-verify)
               test_namespace=$(oc  project -q)
               #HOST="trex.${test_namespace}.svc.cluster.local:8000"
@@ -216,17 +225,7 @@ spec:
               echo -e "Snapshot output:\n ${SNAPSHOT}"
               echo ${HOST} > /tekton/home/endpoint_url            
               echo -n ${HOST} | tee $(results.APP_URL.path)
-              if [ -z $(params.HR_TEST_NAME) ]
-              then
-                echo '$(params.SNAPSHOT)'|jq -r .components[].name |  tr -d '\n\t' | tee $(results.test_name.path)
-              else
-                echo -n  '$(params.HR_TEST_NAME)' | tee $(results.test_name.path)
-              fi            
-              
-              if [ -z $(params.HR_REG_VAR) ]
-              then
-                echo -n 'iteration_duration' | tee $(results.reg_var.path)
-              else
-                echo -n '$(params.HR_REG_VAR)' | tee $(results.reg_var.path)
-              fi   
+              echo '$(params.SNAPSHOT)'|jq -r .components[].name |  tr -d '\n\t' | tee $(results.test_name.path)
+              echo -n 'iteration_duration' | tee $(results.reg_var.path)
+
 
