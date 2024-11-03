@@ -33,7 +33,7 @@ spec:
       matrix:
         params:
         - name: name
-          value: $(tasks.pipepline.results.TEST_TASK_OUTPUT[*])                              
+          value: $(tasks.pipepline-task1.results.TEST_TASK_OUTPUT[*])                              
         
 
  
