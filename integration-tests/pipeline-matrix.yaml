@@ -1,6 +1,6 @@
 apiVersion: tekton.dev/v1
 metadata:
-  name: pipepline-task1
+  name: pipepline1
 kind: Pipeline
 spec:
   tasks:
