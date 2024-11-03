@@ -120,7 +120,10 @@ spec:
           - name: namespace
             type: string
           - name: SNAPSHOT
-            description: Expected output of the application endpoint            
+            description: Expected output of the application endpoint
+        results:
+          - name: clusterKubeconfig
+            type: string                        
         volumes:
           - name: credentials
             emptyDir: {}
@@ -142,39 +145,11 @@ spec:
                 value: "$(tasks.provision-cluster.results.clusterName)"
               - name: credentials
                 value: credentials
-    - name: deploy-app-krkn
-      runAfter:
-        - extract-kubeconfig
-      params:
-        - name: bundleImage
-          value: "$(tasks.parse-metadata.results.component-container-image)"
-        - name: namespace
-          value: "$(params.NAMESPACE)"
-        - name: SNAPSHOT
-          value: $(params.SNAPSHOT)
-        - name: chaostest
-          value: application-outages
-        - name: KUBECONFIG
-          value: "$(tasks.extract-kubeconfig.results.kubeconfig)"                   
-      taskSpec:
-        params:
-          - name: bundleImage
-            type: string
-          - name: namespace
-            type: string
-          - name: SNAPSHOT
-            description: Expected output of the application endpoint 
-          - name: KUBECONFIG
-            description: kube config                      
-        volumes:
-          - name: credentials
-            emptyDir: {}
-        steps:                
-          - name: operator-sdk-run-bundle
+          - name: export-kubeconfig
             image: registry.redhat.io/openshift4/ose-cli:latest
             env:
               - name: KUBECONFIG
-                value: $(params.KUBECONFIG)
+                value: "/credentials/$(steps.get-kubeconfig.results.kubeconfig)"
               - name: SNAPSHOT
                 value: $(params.SNAPSHOT)
               - name: CLIENT_ID
@@ -193,8 +168,58 @@ spec:
             script: |
               #!/usr/bin/env bash
               echo $KUBECONFIG
+              ls -l /credentials 
+              cat $KUBECONFIG > $(results.clusterKubeconfig.path)
               echo $SNAPSHOT
               echo $CLIENT_ID
               echo $CLIENT_SEC
-              oc whoami 
+    - name: deploy-app-krkn
+      runAfter:
+        - extract-kubeconfig
+      params:
+        - name: bundleImage
+          value: "$(tasks.parse-metadata.results.component-container-image)"
+        - name: namespace
+          value: "$(params.NAMESPACE)"
+        - name: SNAPSHOT
+          value: $(params.SNAPSHOT)
+        - name: chaostest
+          value: application-outages
+        - name: KUBECONFIG
+          value: "$(tasks.extract-kubeconfig.results.clusterKubeconfig)"                   
+      taskSpec:
+        params:
+          - name: bundleImage
+            type: string
+          - name: namespace
+            type: string
+          - name: SNAPSHOT
+            description: Expected output of the application endpoint 
+          - name: KUBECONFIG
+            description: kube config                      
+        volumes:
+          - name: credentials
+            emptyDir: {}
+        steps:                
+          - name: operator-sdk-run-bundle
+            image: registry.redhat.io/openshift4/ose-cli:latest
+            env:
+              - name: SNAPSHOT
+                value: $(params.SNAPSHOT)
+              - name: CLIENT_ID
+                valueFrom:
+                  secretKeyRef:
+                    name: ocm
+                    key: client_id
+              - name: CLIENT_SEC
+                valueFrom:
+                  secretKeyRef:
+                    name: ocm
+                    key: client_secret                                  
+            volumeMounts:
+              - name: credentials
+                mountPath: /credentials
+            script: |
+              #!/usr/bin/env bash
+              echo "$(params.KUBECONFIG)"
 
