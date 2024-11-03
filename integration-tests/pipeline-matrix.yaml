@@ -19,6 +19,8 @@ spec:
           - name: name
             value: ["output1", "output2"]
     - name: pipepline-task2
+      runAfter:
+        - pipepline-task1   
       taskRef:
         resolver: git
         params:
@@ -30,8 +32,8 @@ spec:
             value: integration-tests/test-task-result.yaml
       matrix:
         params:
-          - name: name
-            value: ["output3", "output4"]                   
+        - name: name
+          value: $(tasks.pipepline.results.TEST_TASK_OUTPUT[*])                              
         
 
  
