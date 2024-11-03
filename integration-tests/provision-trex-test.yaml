@@ -229,7 +229,7 @@ spec:
               echo -n 'iteration_duration' | tee $(results.reg_var.path)
     - name: run-krkn
       runAfter:
-        - provision-cluster
+        - deploy-app-krkn
       params:
         - name: bundleImage
           value: "$(tasks.parse-metadata.results.component-container-image)"
