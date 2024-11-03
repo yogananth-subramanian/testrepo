@@ -18,7 +18,20 @@ spec:
         params:
           - name: name
             value: ["output1", "output2"]
-                   
+    - name: pipepline-task2
+      taskRef:
+        resolver: git
+        params:
+          - name: url
+            value: https://github.com/yogananth-subramanian/testrepo
+          - name: revision
+            value: main
+          - name: pathInRepo
+            value: integration-tests/test-task-result.yaml
+      matrix:
+        params:
+          - name: name
+            value: ["output3", "output4"]                   
         
 
  
