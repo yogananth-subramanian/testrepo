@@ -120,7 +120,16 @@ spec:
           - name: namespace
             type: string
           - name: SNAPSHOT
-            description: Expected output of the application endpoint            
+            description: Expected output of the application endpoint     
+        results:
+          - name: APP_URL
+            description: APP URL
+          - name: test_name
+            description: Test name
+          - name: reg_var
+            description: Regression variable             
+          - name: TEST_OUTPUT
+            description: Test output                      
         volumes:
           - name: credentials
             emptyDir: {}
@@ -141,16 +150,7 @@ spec:
               - name: clusterName
                 value: "$(tasks.provision-cluster.results.clusterName)"
               - name: credentials
-                value: credentials
-            results:
-              - name: APP_URL
-                description: APP URL
-              - name: test_name
-                description: Test name
-              - name: reg_var
-                description: Regression variable             
-              - name: TEST_OUTPUT
-                description: Test output                 
+                value: credentials             
           - name: operator-sdk-run-bundle
             image: registry.redhat.io/openshift4/ose-cli:latest
             env:
