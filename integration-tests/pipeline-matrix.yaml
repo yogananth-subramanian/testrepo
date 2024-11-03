@@ -13,14 +13,12 @@ spec:
           - name: revision
             value: main
           - name: pathInRepo
-            value: integration-tests/test-task.yaml
+            value: integration-tests/test-task-result.yaml
       matrix:
         params:
           - name: name
             value: ["output1", "output2"]
-  taskRunSpecs:
-    - pipelineTaskName: pipepline-task1
-      maxConcurrency: 1  # Limits the number of parallel task runs to 2                     
+                   
         
 
  
