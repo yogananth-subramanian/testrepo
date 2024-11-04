@@ -5,7 +5,7 @@ kind: Pipeline
 spec:
   params:
     - name: name
-      value: ["output1", "output2"]
+      default: ["output1", "output2"]
   tasks:
     - name: pipepline-task1
       params:
