@@ -17,7 +17,6 @@ spec:
       default: default
       type: string
     - name: chaostest
-      default: application-outages
       default: ["application-outages"]
   tasks:
     - name: parse-metadata
