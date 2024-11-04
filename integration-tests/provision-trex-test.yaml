@@ -18,7 +18,7 @@ spec:
       type: string
     - name: chaostest
       default: application-outages
-      type: string
+      default: ["application-outages"]
   tasks:
     - name: parse-metadata
       taskRef:
@@ -109,12 +109,10 @@ spec:
           value: "$(tasks.parse-metadata.results.component-container-image)"
         - name: SNAPSHOT
           value: $(params.SNAPSHOT)
-        - name: chaostest
-          value: $(params.chaostest)
       matrix:
         params:
           - name: chaostest
-            value: ["application-outages"]                 
+            value: $(params.chaostest[*])                
       taskSpec:
         params:
           - name: bundleImage
@@ -161,7 +159,7 @@ spec:
               - name: KUBECONFIG
                 value: "/credentials/$(steps.get-kubeconfig.results.kubeconfig)"
               - name: CHAOS_TEST
-                value: "/credentials/$(steps.get-kubeconfig.results.kubeconfig)"                
+                value: $(params.chaostest)                
               - name: SNAPSHOT
                 value: $(params.SNAPSHOT)
               - name: CLIENT_ID
@@ -189,7 +187,7 @@ spec:
               dnf -y install jq git
 
               oc new-project ${CHAOS_TEST}
-              oc project CHAOS_TEST
+              oc project ${CHAOS_TEST}
               # Get the route for the application endpoint
               COMPONENT_NAME=$(echo -n ${SNAPSHOT} | jq -r .components[0].name)
               # The --insecure-skip-tls-verify option is added for local testing
@@ -244,8 +242,6 @@ spec:
           value: "$(tasks.parse-metadata.results.component-container-image)"
         - name: SNAPSHOT
           value: $(params.SNAPSHOT)
-        - name: chaostest
-          value: application-outages
       matrix:
         params:
         - name: chaostest
