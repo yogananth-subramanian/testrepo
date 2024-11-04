@@ -17,7 +17,7 @@ spec:
       default: default
       type: string
     - name: chaostest
-      default: ["pod-scenarios", "service-disruption-scenarios"]
+      default: ["application-outages", "container-scenarios", "pod-scenarios", "service-disruption-scenarios", "pvc-scenarios", "time-scenarios", "pod-network-chaos", "node-cpu-hog"]
   tasks:
     - name: parse-metadata
       taskRef:
