@@ -6,6 +6,8 @@ spec:
   params:
     - name: name
       type: string
+    - name: age
+      type: string      
   results:
     - name: TEST_TASK_OUTPUT      
   steps:

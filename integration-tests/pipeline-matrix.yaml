@@ -3,8 +3,14 @@ metadata:
   name: pipepline1
 kind: Pipeline
 spec:
+params:
+  - name: name
+    value: ["output1", "output2"]
   tasks:
     - name: pipepline-task1
+      params:
+        - name: age
+          value: output0   
       taskRef:
         resolver: git
         params:
@@ -17,8 +23,11 @@ spec:
       matrix:
         params:
           - name: name
-            value: ["output1", "output2"]
+            value: $(params.name[*])
     - name: pipepline-task2
+      params:
+        - name: age
+          value: output0     
       runAfter:
         - pipepline-task1   
       taskRef:

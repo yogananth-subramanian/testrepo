@@ -107,20 +107,22 @@ spec:
       params:
         - name: bundleImage
           value: "$(tasks.parse-metadata.results.component-container-image)"
-        - name: namespace
-          value: "$(params.NAMESPACE)"
         - name: SNAPSHOT
           value: $(params.SNAPSHOT)
         - name: chaostest
-          value: application-outages       
+          value: $(params.chaostest)
+      matrix:
+        params:
+          - name: chaostest
+            value: ["application-outages"]                 
       taskSpec:
         params:
           - name: bundleImage
             type: string
-          - name: namespace
-            type: string
           - name: SNAPSHOT
-            description: Expected output of the application endpoint     
+            description: Expected output of the application endpoint
+          - name: chaostest
+            description: Namespace to deploy app to for testing                  
         results:
           - name: APP_URL
             description: APP URL
@@ -129,7 +131,9 @@ spec:
           - name: reg_var
             description: Regression variable             
           - name: TEST_OUTPUT
-            description: Test output                      
+            description: Test output
+          - name: chaos_test_namespace
+            description: Chaos test namespace                                  
         volumes:
           - name: credentials
             emptyDir: {}
@@ -156,6 +160,8 @@ spec:
             env:
               - name: KUBECONFIG
                 value: "/credentials/$(steps.get-kubeconfig.results.kubeconfig)"
+              - name: CHAOS_TEST
+                value: "/credentials/$(steps.get-kubeconfig.results.kubeconfig)"                
               - name: SNAPSHOT
                 value: $(params.SNAPSHOT)
               - name: CLIENT_ID
@@ -182,6 +188,8 @@ spec:
               oc whoami 
               dnf -y install jq git
 
+              oc new-project ${CHAOS_TEST}
+              oc project CHAOS_TEST
               # Get the route for the application endpoint
               COMPONENT_NAME=$(echo -n ${SNAPSHOT} | jq -r .components[0].name)
               # The --insecure-skip-tls-verify option is added for local testing
@@ -227,26 +235,29 @@ spec:
               echo -n ${HOST} | tee $(results.APP_URL.path)
               echo '$(params.SNAPSHOT)'|jq -r .components[].name |  tr -d '\n\t' | tee $(results.test_name.path)
               echo -n 'iteration_duration' | tee $(results.reg_var.path)
+              echo -n "${CHAOS_TEST}" | tee $(results.chaos_test_namespace.path)
     - name: run-krkn
       runAfter:
         - deploy-app-krkn
       params:
         - name: bundleImage
           value: "$(tasks.parse-metadata.results.component-container-image)"
-        - name: namespace
-          value: "$(params.NAMESPACE)"
         - name: SNAPSHOT
           value: $(params.SNAPSHOT)
         - name: chaostest
-          value: application-outages       
+          value: application-outages
+      matrix:
+        params:
+        - name: chaostest
+          value: $(tasks.deploy-app-krkn.results.chaos_test_namespace[*])                 
       taskSpec:
         params:
           - name: bundleImage
             type: string
-          - name: namespace
+          - name: chaostest
             type: string
           - name: SNAPSHOT
-            description: Expected output of the application endpoint
+            description: Expected output of the application endpoint            
         volumes:
           - name: credentials
             emptyDir: {}
@@ -273,7 +284,7 @@ spec:
             name: app-test
             env:        
               - name: NAMESPACE
-                value: "default"
+                value: $(params.chaostest)
               - name: KUBECONFIG
                 value: "/credentials/$(steps.get-kubeconfig.results.kubeconfig)"
               - name: KRKN_KUBE_CONFIG
