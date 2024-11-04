@@ -3,9 +3,9 @@ metadata:
   name: pipepline1
 kind: Pipeline
 spec:
-params:
-  - name: name
-    value: ["output1", "output2"]
+  params:
+    - name: name
+      value: ["output1", "output2"]
   tasks:
     - name: pipepline-task1
       params:
