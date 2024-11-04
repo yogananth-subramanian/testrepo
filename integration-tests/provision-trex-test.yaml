@@ -17,7 +17,7 @@ spec:
       default: default
       type: string
     - name: chaostest
-      default: ["application-outages"]
+      default: ["pod-scenarios", "service-disruption-scenarios"]
   tasks:
     - name: parse-metadata
       taskRef:
