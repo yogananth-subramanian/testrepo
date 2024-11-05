@@ -1,0 +1,159 @@
+apiVersion: tekton.dev/v1beta1
+kind: Pipeline
+metadata:
+  name: integration-test-app
+spec:
+  description: >-
+    Expects a Snapshot of a simple application with endpoint containing the expected output to be deployed on an environment. 
+    A secret containing the kubeconfig for the environment needs to be mounted via the cluster-credentials workspace binding.
+    The route to the single component is expected to have the same name as the component (default appstudio behavior).
+  params:
+    - description: 'Snapshot of the application'
+      name: SNAPSHOT
+      default: '{"components": [{"name":"test-app", "containerImage": "quay.io/example/repo:latest"}]}'
+      type: string
+    - description: 'Namespace where the application is running'
+      name: NAMESPACE
+      default: "default"
+      type: string
+    - description: 'Application endpoint port'
+      name: PORT
+      default: ""
+      type: string
+    - description: 'Horreum Test Name'
+      name: HR_TEST_NAME
+      default: ""
+      type: string      
+    - description: 'Horreum regression variable'
+      name: HR_REG_VAR
+      default: ""
+      type: string        
+  tasks:
+    - name: provision-env
+      taskSpec:
+        results:
+          - name: secretRef
+            description:
+              SecretRef is the name of the secret with a SA token that has admin-like
+              (or whatever we set in the tier template) permissions in the namespace
+            type: string
+        steps:
+          - name: request-ephemeral-namespace
+            image: registry.redhat.io/openshift4/ose-cli:4.13@sha256:73df37794ffff7de1101016c23dc623e4990810390ebdabcbbfa065214352c7c
+            env:
+              - name: KONFLUXNAMESPACE
+                value: "$(context.pipelineRun.namespace)"
+              - name: PIPELINERUN_NAME
+                value: "$(context.pipelineRun.name)"
+              - name: PIPELINERUN_UID
+                value: "$(context.pipelineRun.uid)"
+            script: |
+              #!/bin/bash
+              set -ex
+              set -o pipefail
+      
+              cat <<EOF > space_request.yaml
+              apiVersion: toolchain.dev.openshift.com/v1alpha1
+              kind: SpaceRequest
+              metadata:
+                generateName: task-spacerequest-
+                namespace: $KONFLUXNAMESPACE
+                ownerReferences:
+                - apiVersion: tekton.dev/v1
+                  kind: PipelineRun
+                  name: $PIPELINERUN_NAME
+                  uid: $PIPELINERUN_UID
+              spec:
+                tierName: appstudio-env
+              EOF
+      
+              SPACEREQUEST_NAME=$(oc create -f space_request.yaml -o=jsonpath='{.metadata.name}')
+      
+              if oc wait spacerequests $SPACEREQUEST_NAME --for=condition=Ready --timeout=5m -n $KONFLUXNAMESPACE; then
+                secretRef=$(oc get spacerequests $SPACEREQUEST_NAME -o=jsonpath='{.status.namespaceAccess[0].secretRef}')
+                echo -n $secretRef | tee $(results.secretRef.path)
+              else
+                exit 1
+              fi
+    - name: deploy-app
+      runAfter: [provision-env]
+      params:
+        - name: SNAPSHOT
+          value: $(params.SNAPSHOT)
+        - name: NAMESPACE
+          value: $(params.NAMESPACE)
+        - name: PORT
+          value: $(params.PORT)
+        - name: HR_TEST_NAME
+          value: $(params.HR_TEST_NAME)          
+        - name: HR_REG_VAR
+          value: $(params.HR_REG_VAR)
+      taskSpec:
+        params:
+          - name: SNAPSHOT
+            description: Expected output of the application endpoint
+          - default: 'default'
+            name: NAMESPACE
+            description: Namespace of the application under test
+          - default: ""
+            name: PORT
+            description: Application endpoint Port
+          - name: HR_TEST_NAME
+            description: 'Horreum Test Name'            
+          - name: HR_REG_VAR
+            description: 'Horreum regression variable'            
+        results:
+          - name: APP_URL
+            description: APP URL
+          - name: test_name
+            description: Test name
+          - name: reg_var
+            description: Regression variable             
+          - name: TEST_OUTPUT
+            description: Test output             
+        steps:
+        - image: registry.redhat.io/openshift4/ose-cli:latest
+          env:
+            - name: SNAPSHOT
+              value: $(params.SNAPSHOT)
+            - name: NAMESPACE
+              value: $(params.NAMESPACE)
+            - name: PORT
+              value: $(params.PORT)
+            - name: HORREUM_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: horreum
+                  key: horreum_password
+            - name: HORREUM_URI
+              valueFrom:
+                secretKeyRef:
+                  name: horreum
+                  key: horreum_uri
+            - name: HORREUM_USER
+              valueFrom:
+                secretKeyRef:
+                  name: horreum
+                  key: horreum_user                
+            - name: KUBECONFIG_VALUE
+              valueFrom:
+                secretKeyRef:
+                  name: "$(tasks.provision-env.results.secretRef)"
+                  key: kubeconfig
+            - name: CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: ocm
+                  key: client_id
+            - name: CLIENT_SEC
+              valueFrom:
+                secretKeyRef:
+                  name: ocm
+                  key: client_secret                      
+          script: |
+            #!/usr/bin/env bash
+            cat <<< "$KUBECONFIG_VALUE" > /tmp/cfg
+            dnf -y install jq git
+            export KUBECONFIG=/tmp/cfg
+
+            
