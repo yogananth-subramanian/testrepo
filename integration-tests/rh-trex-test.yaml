@@ -98,7 +98,7 @@ spec:
               set -o pipefail
               oc get secret ocm
               horreum_value=$(oc get secret ocm -o jsonpath='{.data.client_id}' | base64 --decode)
-              echo -n '${horreum_value}' | tee $(results.HORREUM_COFIG_SET.path)            
+              echo -n "${horreum_value}" | tee $(results.HORREUM_COFIG_SET.path)            
     - name: deploy-app
       runAfter: [provision-env]
       params:
