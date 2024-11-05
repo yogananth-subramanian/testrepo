@@ -80,11 +80,6 @@ spec:
     - name: extract-secrets
       taskSpec:
         results:
-          - name: secretRef
-            description:
-              SecretRef is the name of the secret with a SA token that has admin-like
-              (or whatever we set in the tier template) permissions in the namespace
-            type: string
           - name: HORREUM_PASSWORD
             type: string
           - name: HORREUM_URI
@@ -101,7 +96,8 @@ spec:
               oc get secret horreum
               set -ex
               set -o pipefail
-              oc get secret ocm            
+              oc get secret ocm
+              echo -n "false" | tee $(results.HORREUM_COFIG_SET.path)            
     - name: deploy-app
       runAfter: [provision-env]
       params:
