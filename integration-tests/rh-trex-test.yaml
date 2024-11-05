@@ -101,22 +101,7 @@ spec:
           - name: HR_TEST_NAME
             description: 'Horreum Test Name'            
           - name: HR_REG_VAR
-            description: 'Horreum regression variable' 
-          - name: HORREUM_PASSWORD
-            valueFrom:
-              secretKeyRef:
-                name: horreum
-                key: horreum_password
-          - name: HORREUM_URI
-            valueFrom:
-              secretKeyRef:
-                name: horreum
-                key: horreum_uri
-          - name: HORREUM_USER
-            valueFrom:
-              secretKeyRef:
-                name: horreum
-                key: horreum_user                        
+            description: 'Horreum regression variable'                      
         results:
           - name: APP_URL
             description: APP URL
@@ -155,5 +140,6 @@ spec:
             cat <<< "$KUBECONFIG_VALUE" > /tmp/cfg
             dnf -y install jq git
             export KUBECONFIG=/tmp/cfg
+            oc get secret
 
             
