@@ -52,6 +52,7 @@ spec:
               set -ex
               set -o pipefail
               oc get secret ocm
+              oc get secret horreum
               cat <<EOF > space_request.yaml
               apiVersion: toolchain.dev.openshift.com/v1alpha1
               kind: SpaceRequest
