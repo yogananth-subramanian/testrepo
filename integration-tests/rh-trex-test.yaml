@@ -77,6 +77,31 @@ spec:
               else
                 exit 1
               fi
+    - name: extract-secrets
+      taskSpec:
+        results:
+          - name: secretRef
+            description:
+              SecretRef is the name of the secret with a SA token that has admin-like
+              (or whatever we set in the tier template) permissions in the namespace
+            type: string
+          - name: HORREUM_PASSWORD
+            type: string
+          - name: HORREUM_URI
+            type: string
+          - name: HORREUM_USER
+            type: string
+          - name: HORREUM_COFIG_SET
+            type: string                       
+        steps:
+          - name: extract-secrets
+            image: registry.redhat.io/openshift4/ose-cli:4.13@sha256:73df37794ffff7de1101016c23dc623e4990810390ebdabcbbfa065214352c7c
+            script: |
+              #!/bin/bash
+              oc get secret horreum
+              set -ex
+              set -o pipefail
+              oc get secret ocm            
     - name: deploy-app
       runAfter: [provision-env]
       params:
@@ -90,6 +115,8 @@ spec:
           value: $(params.HR_TEST_NAME)          
         - name: HR_REG_VAR
           value: $(params.HR_REG_VAR)
+        - name: HORREUM_COFIG_SET
+          value: $(tasks.extract-secrets.results.HORREUM_COFIG_SET)          
       taskSpec:
         params:
           - name: SNAPSHOT
@@ -103,7 +130,9 @@ spec:
           - name: HR_TEST_NAME
             description: 'Horreum Test Name'            
           - name: HR_REG_VAR
-            description: 'Horreum regression variable'                      
+            description: 'Horreum regression variable'
+          - name: HORREUM_COFIG_SET
+            description: 'Horreum regression variable'                                    
         results:
           - name: APP_URL
             description: APP URL
@@ -140,8 +169,9 @@ spec:
           script: |
             #!/usr/bin/env bash
             cat <<< "$KUBECONFIG_VALUE" > /tmp/cfg
-            dnf -y install jq git
             export KUBECONFIG=/tmp/cfg
             oc get secret
+            echo $(params.HORREUM_COFIG_SET)
+            echo "====================="
 
             
