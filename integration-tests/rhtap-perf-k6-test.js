@@ -6,7 +6,7 @@ import { textSummary } from 'https://jslib.k6.io/k6-summary/0.0.2/index.js';
 
 const token = open('/tmp/token');
 const BASE_URL = `${__ENV.BASE_URL}`;
-const SLEEP_DURATION = 0.5;
+const SLEEP_DURATION = 0.1;
 const listTrend = new Trend('List_API');
 const postTrend = new Trend('POST_API');
 const getTrend = new Trend('GET_ID_API');
