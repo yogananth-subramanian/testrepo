@@ -90,7 +90,7 @@ spec:
             type: string                       
         steps:
           - name: extract-secrets
-            image: registry.redhat.io/openshift4/ose-cli:4.13@sha256:73df37794ffff7de1101016c23dc623e4990810390ebdabcbbfa065214352c7c
+            image: registry.redhat.io/openshift4/ose-cli:latest
             script: |
               #!/bin/bash
               horreum_sec_set='true'
@@ -107,7 +107,9 @@ spec:
               fi  
               echo -n "${horreum_sec_set}" | tee $(results.HORREUM_COFIG_SET.path)            
     - name: deploy-app
-      runAfter: [provision-env]
+      runAfter: 
+        - provision-env
+        - extract-secrets
       params:
         - name: SNAPSHOT
           value: $(params.SNAPSHOT)
@@ -181,6 +183,9 @@ spec:
               echo "horreum config not set"
             else
                echo "uploading to horreum"
+               echo $(params.HORREUM_PASSWORD)
+               echo $(params.HORREUM_URI)
+               echo $(params.HORREUM_USER)
             fi    
             echo "====================="
 
