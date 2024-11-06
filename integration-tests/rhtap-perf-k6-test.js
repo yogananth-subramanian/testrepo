@@ -67,7 +67,7 @@ export default function () {
                 "A JSON array of dinosaur objects": (r) => r.status === 200
             });
             listTrend.add(request.timings.duration);
-            sleep(SLEEP_DURATION);
+            // sleep(SLEEP_DURATION);
 
         }
         {
@@ -82,7 +82,7 @@ export default function () {
             });
 
             postTrend.add(request.timings.duration);
-            sleep(SLEEP_DURATION);
+            // sleep(SLEEP_DURATION);
         }
 
     });
@@ -99,7 +99,7 @@ export default function () {
             });
 
             getTrend.add(request.timings.duration);
-            sleep(SLEEP_DURATION);
+            // sleep(SLEEP_DURATION);
 
         }
         {
@@ -113,7 +113,7 @@ export default function () {
 
 
             patchTrend.add(request.timings.duration);
-            sleep(SLEEP_DURATION);
+            // sleep(SLEEP_DURATION);
         }
 
 
