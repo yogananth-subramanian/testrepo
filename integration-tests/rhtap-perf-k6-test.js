@@ -19,7 +19,7 @@ export const options = {
       executor: 'constant-arrival-rate',
       rate: 1,
       duration: '120s',
-      preAllocatedVUs: 1,
+      preAllocatedVUs: 5,
     },
   },
   thresholds: {
