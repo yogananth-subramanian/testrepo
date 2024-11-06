@@ -94,6 +94,9 @@ spec:
             script: |
               #!/bin/bash
               horreum_sec_set='true'
+              horreum_password=''
+              horreum_uri=''
+              horreum_user=''
               oc get secret horreum
               if [ $? -ne 0 ]; then
                 horreum_sec_set='false'
@@ -101,10 +104,10 @@ spec:
                 horreum_password=$(oc get secret ocm -o jsonpath='{.data.horreum_password}' | base64 --decode)
                 horreum_uri=$(oc get secret ocm -o jsonpath='{.data.horreum_uri}' | base64 --decode)
                 horreum_user=$(oc get secret ocm -o jsonpath='{.data.horreum_user}' | base64 --decode)
-                echo -n "${horreum_password}" | tee $(results.HORREUM_PASSWORD.path)
-                echo -n "${horreum_uri}" | tee $(results.HORREUM_URI.path)
-                echo -n "${horreum_user}" | tee $(results.HORREUM_USER.path)
-              fi  
+              fi
+              echo -n "${horreum_password}" | tee $(results.HORREUM_PASSWORD.path)
+              echo -n "${horreum_uri}" | tee $(results.HORREUM_URI.path)
+              echo -n "${horreum_user}" | tee $(results.HORREUM_USER.path)                
               echo -n "${horreum_sec_set}" | tee $(results.HORREUM_COFIG_SET.path)            
     - name: deploy-app
       runAfter: 
@@ -122,7 +125,13 @@ spec:
         - name: HR_REG_VAR
           value: $(params.HR_REG_VAR)
         - name: HORREUM_COFIG_SET
-          value: $(tasks.extract-secrets.results.HORREUM_COFIG_SET)          
+          value: $(tasks.extract-secrets.results.HORREUM_COFIG_SET)
+        - name: HORREUM_PASSWORD
+          value: $(tasks.extract-secrets.results.HORREUM_PASSWORD)
+        - name: HORREUM_URI
+          value: $(tasks.extract-secrets.results.HORREUM_URI)
+        - name: HORREUM_USER
+          value: $(tasks.extract-secrets.results.HORREUM_USER)                                        
       taskSpec:
         params:
           - name: SNAPSHOT
@@ -138,7 +147,13 @@ spec:
           - name: HR_REG_VAR
             description: 'Horreum regression variable'
           - name: HORREUM_COFIG_SET
-            description: 'Horreum regression variable'                                    
+            description: 'Horreum regression variable'
+          - name: HORREUM_PASSWORD
+            description: 'Horreum regression variable'
+          - name: HORREUM_URI
+            description: 'Horreum regression variable'
+          - name: HORREUM_USER
+            description: 'Horreum regression variable'                                                 
         results:
           - name: APP_URL
             description: APP URL
