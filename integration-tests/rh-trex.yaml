@@ -226,13 +226,34 @@ spec:
             wget -O /tmp/ocm https://github.com/openshift-online/ocm-cli/releases/download/v0.1.65/ocm-linux-amd64
             chmod +x /tmp/ocm
             echo ${OCM_TOKEN}
-            /tmp/ocm login --token=${OCM_TOKEN} --url=https://$(params.url) --debug
-            export BASE_URL=https://$(params.url)
+            /tmp/ocm login --token=${OCM_TOKEN} --url=https://127.0.0.1:8080 --debug
+            export BASE_URL=https://127.0.0.1:8080
             echo $BASE_URL
             wget -O /tmp/script.js https://raw.githubusercontent.com/yogananth-subramanian/testrepo/refs/heads/main/integration-tests/rhtap-perf-k6-test.js
             echo -n `/tmp/ocm token`>/tmp/token
             k6 run --http-debug /tmp/script.js
-            cat /workspace/output.json       
+            cat /workspace/output.json
+        sidecars:
+        - name: sidecar1
+          image: registry.redhat.io/openshift4/ose-cli:latest
+          env:
+            - name: NAMESPACE
+              value: $(params.NAMESPACE)          
+            - name: KUBECONFIG_VALUE
+              valueFrom:
+                secretKeyRef:
+                  name: "$(tasks.provision-env.results.secretRef)"
+                  key: kubeconfig          
+          ports:
+            - containerPort: 8080
+          script: |
+            #!/usr/bin/env bash
+            echo "Sidecar 1 running a service on port 8080"
+            cat <<< "$KUBECONFIG_VALUE" > /tmp/cfg
+            dnf -y install jq git
+            export KUBECONFIG=/tmp/cfg
+            oc get --kubeconfig /tmp/cfg all  
+            oc port-forward --kubeconfig /tmp/cfg svc/trex 8080:8000                             
       runAfter:
         - deploy-app
   finally:
