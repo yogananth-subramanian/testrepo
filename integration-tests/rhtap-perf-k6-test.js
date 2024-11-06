@@ -23,7 +23,7 @@ export const options = {
     },
   },
   thresholds: {
-    iteration_duration: ['med<6000'],
+    iteration_duration: ['med<40'],
     List_API: ['med<10'],
     POST_API: ['med<10'],
     PATCH_API: ['med<20'],
