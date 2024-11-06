@@ -209,7 +209,25 @@ spec:
         params:
           - name: url
           - name: test_name
-          - name: reg_var          
+          - name: reg_var
+        sidecars:
+        - name: sidecar1
+          image: registry.redhat.io/openshift4/ose-cli:latest
+          env:       
+            - name: KUBECONFIG_VALUE
+              valueFrom:
+                secretKeyRef:
+                  name: "$(tasks.provision-env.results.secretRef)"
+                  key: kubeconfig          
+          ports:
+            - containerPort: 8080
+          script: |
+            #!/usr/bin/env bash
+            echo "Sidecar 1 running a service on port 8080"
+            cat <<< "$KUBECONFIG_VALUE" > /tmp/cfg
+            export KUBECONFIG=/tmp/cfg
+            oc get --kubeconfig /tmp/cfg all  
+            oc port-forward --kubeconfig /tmp/cfg svc/trex 8080:8000                        
         steps:
         - image: grafana/k6
           name: run-perf
@@ -233,27 +251,7 @@ spec:
             echo -n `/tmp/ocm token`>/tmp/token
             k6 run --http-debug /tmp/script.js
             cat /workspace/output.json
-        sidecars:
-        - name: sidecar1
-          image: registry.redhat.io/openshift4/ose-cli:latest
-          env:
-            - name: NAMESPACE
-              value: $(params.NAMESPACE)          
-            - name: KUBECONFIG_VALUE
-              valueFrom:
-                secretKeyRef:
-                  name: "$(tasks.provision-env.results.secretRef)"
-                  key: kubeconfig          
-          ports:
-            - containerPort: 8080
-          script: |
-            #!/usr/bin/env bash
-            echo "Sidecar 1 running a service on port 8080"
-            cat <<< "$KUBECONFIG_VALUE" > /tmp/cfg
-            dnf -y install jq git
-            export KUBECONFIG=/tmp/cfg
-            oc get --kubeconfig /tmp/cfg all  
-            oc port-forward --kubeconfig /tmp/cfg svc/trex 8080:8000                             
+                         
       runAfter:
         - deploy-app
   finally:
