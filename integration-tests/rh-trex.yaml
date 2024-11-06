@@ -173,7 +173,7 @@ spec:
             #ROUTE_NAME=$(oc get --kubeconfig /tmp/cfg routes trex -o name --insecure-skip-tls-verify)
             test_namespace=$(oc --kubeconfig /tmp/cfg project -q)
             #HOST="trex.${test_namespace}.svc.cluster.local:8000"
-            HOST="$(oc get service trex -o jsonpath='{.spec.clusterIP}'):8000"
+            HOST="$(oc get --kubeconfig /tmp/cfg service trex -o jsonpath='{.spec.clusterIP}'):8000"
             #HOST=$(oc get --kubeconfig /tmp/cfg "${ROUTE_NAME}" -o jsonpath={.spec.host}  --insecure-skip-tls-verify)
             echo "Found target host ${HOST} for app ${APPLICATION_NAME}"
             
