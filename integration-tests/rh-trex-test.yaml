@@ -93,12 +93,19 @@ spec:
             image: registry.redhat.io/openshift4/ose-cli:4.13@sha256:73df37794ffff7de1101016c23dc623e4990810390ebdabcbbfa065214352c7c
             script: |
               #!/bin/bash
+              horreum_sec_set='true'
               oc get secret horreum
-              set -ex
-              set -o pipefail
-              oc get secret ocm
-              horreum_value=$(oc get secret ocm -o jsonpath='{.data.client_id}' | base64 --decode)
-              echo -n "${horreum_value}" | tee $(results.HORREUM_COFIG_SET.path)            
+              if [ $? -ne 0 ]; then
+                horreum_sec_set='false'
+              else
+                horreum_password=$(oc get secret ocm -o jsonpath='{.data.horreum_password}' | base64 --decode)
+                horreum_uri=$(oc get secret ocm -o jsonpath='{.data.horreum_uri}' | base64 --decode)
+                horreum_user=$(oc get secret ocm -o jsonpath='{.data.horreum_user}' | base64 --decode)
+                echo -n "${horreum_password}" | tee $(results.HORREUM_PASSWORD.path)
+                echo -n "${horreum_uri}" | tee $(results.HORREUM_URI.path)
+                echo -n "${horreum_user}" | tee $(results.HORREUM_USER.path)
+              fi  
+              echo -n "${horreum_sec_set}" | tee $(results.HORREUM_COFIG_SET.path)            
     - name: deploy-app
       runAfter: [provision-env]
       params:
@@ -169,6 +176,12 @@ spec:
             export KUBECONFIG=/tmp/cfg
             oc get secret
             echo $(params.HORREUM_COFIG_SET)
+            horreum_sec_set=$(params.HORREUM_COFIG_SET)
+            if [ ${horreum_sec_set} == 'false' ]; then
+              echo "horreum config not set"
+            else
+               echo "uploading to horreum"
+            fi    
             echo "====================="
 
             
