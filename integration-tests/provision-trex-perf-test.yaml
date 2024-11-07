@@ -241,13 +241,13 @@ spec:
         - name: bundleImage
           value: "$(tasks.parse-metadata.results.component-container-image)"
         - name: SNAPSHOT
-          value: $(params.SNAPSHOT)
-        - name: url
-          value: "$(tasks.deploy-app-krkn.results.APP_URL)"          
+          value: $(params.SNAPSHOT)        
       matrix:
         params:
         - name: chaostest
-          value: $(tasks.deploy-app-krkn.results.chaos_test_namespace[*])                 
+          value: $(tasks.deploy-app-krkn.results.chaos_test_namespace[*])
+        - name: url
+          value: $(tasks.deploy-app-krkn.results.APP_URL[*])                             
       taskSpec:
         params:
           - name: bundleImage
