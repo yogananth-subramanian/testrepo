@@ -104,10 +104,6 @@ spec:
       params:
         - name: SNAPSHOT
           value: $(params.SNAPSHOT)
-        - name: NAMESPACE
-          value: $(params.NAMESPACE)
-        - name: PORT
-          value: $(params.PORT)
         - name: HR_TEST_NAME
           value: $(params.HR_TEST_NAME)          
         - name: HR_REG_VAR
@@ -140,10 +136,6 @@ spec:
           env:
             - name: SNAPSHOT
               value: $(params.SNAPSHOT)
-            - name: NAMESPACE
-              value: $(params.NAMESPACE)
-            - name: PORT
-              value: $(params.PORT)
             - name: KUBECONFIG_VALUE
               valueFrom:
                 secretKeyRef:
