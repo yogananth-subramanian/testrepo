@@ -292,15 +292,7 @@ spec:
                   value: https://github.com/konflux-ci/build-definitions.git
                 - name: revision
                   value: main
-                - name: pa
-Roll over image to zoom in
-TP-Link Ultra-Portable Wi-Fi 6 AX1500 Travel Router TL-WR1502X | Easy Public Wi-Fi Sharing | Hotel/RV/Travel Approved | Phone Wi-Fi Tether | USB C Powered | Multi-Mode | Pocket-Size Design
-Visit the TP-Link Store
-3.8 3.8 out of 5 stars    9,080 ratings | Search this page
-₹3,299.00 with 49 percent savings-49% ₹3,299
-M.R.P.: ₹6,499.00M.R.P.: ₹6,499₹6,499
-Inclusive of all taxes
-thInRepo
+                - name: pathInRepo
                   value: stepactions/eaas-get-ephemeral-cluster-credentials/0.1/eaas-get-ephemeral-cluster-credentials.yaml
             params:
               - name: eaasSpaceSecretRef
