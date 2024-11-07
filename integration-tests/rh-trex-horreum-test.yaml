@@ -12,14 +12,6 @@ spec:
       name: SNAPSHOT
       default: '{"components": [{"name":"test-app", "containerImage": "quay.io/example/repo:latest"}]}'
       type: string
-    - description: 'Namespace where the application is running'
-      name: NAMESPACE
-      default: "default"
-      type: string
-    - description: 'Application endpoint port'
-      name: PORT
-      default: ""
-      type: string
     - description: 'Horreum Test Name'
       name: HR_TEST_NAME
       default: ""
@@ -197,25 +189,11 @@ spec:
             oc apply --kubeconfig /tmp/cfg  -f /tmp/templates/secrets-template.json
             oc apply --kubeconfig /tmp/cfg  -f /tmp/templates/service-template.json
             sleep 60
-            #oc expose --kubeconfig /tmp/cfg service trex
             oc get --kubeconfig /tmp/cfg all
             oc get --kubeconfig /tmp/cfg events
             oc describe --kubeconfig /tmp/cfg pod -l app=trex
             oc logs --kubeconfig /tmp/cfg -l app=trex
-            #ROUTE_NAME=$(oc get --kubeconfig /tmp/cfg routes trex -o name --insecure-skip-tls-verify)
-            test_namespace=$(oc --kubeconfig /tmp/cfg project -q)
-            #HOST="trex.${test_namespace}.svc.cluster.local:8000"
-            HOST="$(oc get --kubeconfig /tmp/cfg service trex -o jsonpath='{.spec.clusterIP}'):8000"
-            #HOST=$(oc get --kubeconfig /tmp/cfg "${ROUTE_NAME}" -o jsonpath={.spec.host}  --insecure-skip-tls-verify)
-            echo "Found target host ${HOST} for app ${APPLICATION_NAME}"
-            
-            # Check the application endpoint
-            curl -k https://${HOST}
-            ENDPOINT_OUTPUT=$(curl -k https://${HOST})
-            echo -e "The endpoint outputs the following:\n ${ENDPOINT_OUTPUT}"
-            echo -e "Snapshot output:\n ${SNAPSHOT}"
-            echo ${HOST} > /tekton/home/endpoint_url            
-            echo -n ${HOST} | tee $(results.APP_URL.path)
+
             if [ -z $(params.HR_TEST_NAME) ]
             then
               echo '$(params.SNAPSHOT)'|jq -r .components[].name |  tr -d '\n\t' | tee $(results.test_name.path)
@@ -231,8 +209,6 @@ spec:
             fi             
     - name: perf-benchmark 
       params:
-        - name: url
-          value: $(tasks.deploy-app.results.APP_URL)
         - name: test_name
           value: $(tasks.deploy-app.results.test_name)
         - name: reg_var
@@ -247,7 +223,6 @@ spec:
           value: $(tasks.extract-secrets.results.HORREUM_USER)           
       taskSpec:
         params:
-          - name: url
           - name: test_name
           - name: reg_var
           - name: HORREUM_COFIG_SET
@@ -255,7 +230,7 @@ spec:
           - name: HORREUM_URI
           - name: HORREUM_USER
         sidecars:
-        - name: sidecar1
+        - name: kube-proxy
           image: registry.redhat.io/openshift4/ose-cli:latest
           env:       
             - name: KUBECONFIG_VALUE
@@ -267,10 +242,8 @@ spec:
             - containerPort: 8080
           script: |
             #!/usr/bin/env bash
-            echo "Sidecar 1 running a service on port 8080"
             cat <<< "$KUBECONFIG_VALUE" > /tmp/cfg
             export KUBECONFIG=/tmp/cfg
-            oc get --kubeconfig /tmp/cfg all  
             oc port-forward --kubeconfig /tmp/cfg svc/trex 8080:8000                        
         steps:
         - image: grafana/k6
@@ -283,30 +256,33 @@ spec:
                   key: ocmtoken          
           script: |
             #!/usr/bin/env sh
-            export
-            echo "Transform result to json format"
             wget -O /tmp/ocm https://github.com/openshift-online/ocm-cli/releases/download/v0.1.65/ocm-linux-amd64
             chmod +x /tmp/ocm
-            echo ${OCM_TOKEN}
             /tmp/ocm login --token=${OCM_TOKEN} --url=https://127.0.0.1:8080 --debug
             export BASE_URL=https://127.0.0.1:8080
-            echo $BASE_URL
             wget -O /tmp/script.js https://raw.githubusercontent.com/yogananth-subramanian/testrepo/refs/heads/main/integration-tests/rhtap-perf-k6-test.js
             echo -n `/tmp/ocm token`>/tmp/token
-            k6 run --http-debug /tmp/script.js
+            k6 run /tmp/script.js
             cat /workspace/output.json
         - image: quay.io/yogananth_subramanian/curl-yq-jq
           name: check-regression
           script: |
-            set -xv
+            set -x
             horreum_sec_set=$(params.HORREUM_COFIG_SET)
             if [ ${horreum_sec_set} == 'false' ]; then
-              echo "horreum config not set"
+              echo "Horreum config not set"
             else
-              echo "uploading to horreum"
-              echo $(params.HORREUM_PASSWORD)
-              echo $(params.HORREUM_URI)
-              echo $(params.HORREUM_USER)
+              echo "Transform result to json format"
+              cat /workspace/output.json
+              test_name=$(params.test_name)
+              reg_var=$(params.reg_var)
+              KEYCLOAK_URI=$(curl -s -k -X GET  ${HORREUM_URI}/api/config/keycloak|jq -r .url)
+              TOKEN=$(curl -s  -k  ${KEYCLOAK_URI}/realms/horreum/protocol/openid-connect/token   -d "username=$HORREUM_USER"  -d "password=$HORREUM_PASSWORD" -d 'grant_type=password' -d 'client_id=horreum-ui' | jq -r .access_token)
+              curl -k -s -v ${HORREUM_URI}'/api/run/data?start=$.startTime&stop=$.endTime&test='$test_name -X POST -H 'Authorization: Bearer '${TOKEN} -H 'Content-Type: application/json'  -d @/workspace/output.json
+              testid=$(curl -s -k -X GET  ${HORREUM_URI}'/api/test/byName/'$test_name|jq -r .id)
+              varid=$(curl -s -k -X GET  ${HORREUM_URI}'/api/alerting/variables?test='$testid|jq -r --arg regvar "$reg_var" '.[] | select(.name==$regvar)| .id ')
+              changes=`curl -s -k -X GET ${HORREUM_URI}'/api/alerting/changes?var='$varid  |jq  '.| length'`
+              if [ -z  $changes ] || [ $changes -gt 0  ] ;then echo "Regression check failed";exit 1;fi                  
             fi 
       runAfter:
         - deploy-app
