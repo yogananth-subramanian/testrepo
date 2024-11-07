@@ -243,7 +243,7 @@ spec:
         - name: SNAPSHOT
           value: $(params.SNAPSHOT)
         - name: url
-          value: $(tasks.deploy-app-krkn.results.APP_URL)          
+          value: "$(tasks.deploy-app-krkn.results.APP_URL)"          
       matrix:
         params:
         - name: chaostest
@@ -256,7 +256,8 @@ spec:
             type: string
           - name: SNAPSHOT
             description: Expected output of the application endpoint
-          - name: url              
+          - name: url
+            type: string              
         volumes:
           - name: credentials
             emptyDir: {}
