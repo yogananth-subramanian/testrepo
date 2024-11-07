@@ -1,0 +1,492 @@
+---
+apiVersion: tekton.dev/v1
+kind: Pipeline
+metadata:
+  name: deploy-operator
+spec:
+  description: |
+    An integration test which provisions an ephemeral Hypershift cluster and deploys an Operator
+    bundle from a Konflux snapshot.
+  params:
+    - description: Snapshot of the application
+      name: SNAPSHOT
+      default: '{"components": [{"name":"test-app", "containerImage": "quay.io/example/repo:latest"}]}'
+      type: string
+    - description: Namespace where the the Operator bundle will be deployed.
+      name: NAMESPACE
+      default: default
+      type: string
+    - name: chaostest
+      default: ["application-outages" ]
+  tasks:
+    - name: parse-metadata
+      taskRef:
+        resolver: git
+        params:
+          - name: url
+            value: https://github.com/konflux-ci/integration-examples
+          - name: revision
+            value: main
+          - name: pathInRepo
+            value: tasks/test_metadata.yaml
+      params:
+        - name: SNAPSHOT
+          value: $(params.SNAPSHOT)
+    - name: provision-eaas-space
+      runAfter:
+        - parse-metadata
+      taskRef:
+        resolver: git
+        params:
+          - name: url
+            value: https://github.com/konflux-ci/build-definitions.git
+          - name: revision
+            value: main
+          - name: pathInRepo
+            value: task/eaas-provision-space/0.1/eaas-provision-space.yaml
+      params:
+        - name: ownerName
+          value: $(context.pipelineRun.name)
+        - name: ownerUid
+          value: $(context.pipelineRun.uid)
+    - name: provision-cluster
+      runAfter:
+        - provision-eaas-space
+      taskSpec:
+        results:
+          - name: clusterName
+            value: "$(steps.create-cluster.results.clusterName)"
+        steps:
+          - name: get-supported-versions
+            ref:
+              resolver: git
+              params:
+                - name: url
+                  value: https://github.com/konflux-ci/build-definitions.git
+                - name: revision
+                  value: main
+                - name: pathInRepo
+                  value: stepactions/eaas-get-supported-ephemeral-cluster-versions/0.1/eaas-get-supported-ephemeral-cluster-versions.yaml
+            params:
+              - name: eaasSpaceSecretRef
+                value: $(tasks.provision-eaas-space.results.secretRef)
+          - name: pick-version
+            ref:
+              resolver: git
+              params:
+                - name: url
+                  value: https://github.com/konflux-ci/build-definitions.git
+                - name: revision
+                  value: main
+                - name: pathInRepo
+                  value: stepactions/eaas-get-latest-openshift-version-by-prefix/0.1/eaas-get-latest-openshift-version-by-prefix.yaml
+            params:
+              - name: prefix
+                value: "$(steps.get-supported-versions.results.versions[0])."
+          - name: create-cluster
+            ref:
+              resolver: git
+              params:
+                - name: url
+                  value: https://github.com/konflux-ci/build-definitions.git
+                - name: revision
+                  value: main
+                - name: pathInRepo
+                  value: stepactions/eaas-create-ephemeral-cluster-hypershift-aws/0.1/eaas-create-ephemeral-cluster-hypershift-aws.yaml
+            params:
+              - name: eaasSpaceSecretRef
+                value: $(tasks.provision-eaas-space.results.secretRef)
+              - name: version
+                value: "$(steps.pick-version.results.version)"
+              - name: instanceType	
+                value: m5.large                 
+    - name: deploy-app-krkn
+      runAfter:
+        - provision-cluster
+      params:
+        - name: bundleImage
+          value: "$(tasks.parse-metadata.results.component-container-image)"
+        - name: SNAPSHOT
+          value: $(params.SNAPSHOT)
+      matrix:
+        params:
+          - name: chaostest
+            value: $(params.chaostest[*])                
+      taskSpec:
+        params:
+          - name: bundleImage
+            type: string
+          - name: SNAPSHOT
+            description: Expected output of the application endpoint
+          - name: chaostest
+            description: Namespace to deploy app to for testing                  
+        results:
+          - name: APP_URL
+            description: APP URL
+          - name: test_name
+            description: Test name
+          - name: reg_var
+            description: Regression variable             
+          - name: TEST_OUTPUT
+            description: Test output
+          - name: chaos_test_namespace
+            description: Chaos test namespace                                  
+        volumes:
+          - name: credentials
+            emptyDir: {}
+        steps:
+          - name: get-kubeconfig
+            ref:
+              resolver: git
+              params:
+                - name: url
+                  value: https://github.com/konflux-ci/build-definitions.git
+                - name: revision
+                  value: main
+                - name: pathInRepo
+                  value: stepactions/eaas-get-ephemeral-cluster-credentials/0.1/eaas-get-ephemeral-cluster-credentials.yaml
+            params:
+              - name: eaasSpaceSecretRef
+                value: $(tasks.provision-eaas-space.results.secretRef)
+              - name: clusterName
+                value: "$(tasks.provision-cluster.results.clusterName)"
+              - name: credentials
+                value: credentials             
+          - name: operator-sdk-run-bundle
+            image: registry.redhat.io/openshift4/ose-cli:latest
+            env:
+              - name: KUBECONFIG
+                value: "/credentials/$(steps.get-kubeconfig.results.kubeconfig)"
+              - name: CHAOS_TEST
+                value: $(params.chaostest)                
+              - name: SNAPSHOT
+                value: $(params.SNAPSHOT)
+              - name: CLIENT_ID
+                valueFrom:
+                  secretKeyRef:
+                    name: ocm
+                    key: client_id
+              - name: CLIENT_SEC
+                valueFrom:
+                  secretKeyRef:
+                    name: ocm
+                    key: client_secret                                  
+            volumeMounts:
+              - name: credentials
+                mountPath: /credentials
+            script: |
+              #!/usr/bin/env bash
+              echo $KUBECONFIG
+              ls -l /credentials 
+              cat $KUBECONFIG
+              echo $SNAPSHOT
+              echo $CLIENT_ID
+              echo $CLIENT_SEC
+              oc whoami 
+              dnf -y install jq git
+
+              oc new-project ${CHAOS_TEST}
+              oc project ${CHAOS_TEST}
+              # Get the route for the application endpoint
+              COMPONENT_NAME=$(echo -n ${SNAPSHOT} | jq -r .components[0].name)
+              # The --insecure-skip-tls-verify option is added for local testing
+              # when the clusters only have self-signed certificates.
+              # This option should not be used in production.
+
+              TARGET_COMPONENT_NAME="/tmp/rh-trex"
+              REPO_URL=$(echo $SNAPSHOT | jq -r '.components[] | .source.git.url')
+              REPO_COMMIT=$(echo $SNAPSHOT | jq -r '.components[] | .source.git.revision')
+              REPO_IMG=$(echo $SNAPSHOT | jq -r '.components[] | .containerImage')
+              git clone $REPO_URL $TARGET_COMPONENT_NAME
+              cd $TARGET_COMPONENT_NAME
+              git checkout $REPO_COMMIT
+              rev=$(echo ${REPO_IMG#*/})
+              image_reg=$(echo ${REPO_IMG%%/*})
+              image_tag=$(echo ${rev#*:})
+              image_rep=$(echo ${rev%:*})
+              mkdir -p /tmp/templates/
+              for i in $(ls templates/*yml); do j=${i#*/}; outf=${j%.*};oc process --filename="$i" --local="true" --ignore-unknown-parameters="true" --param="ENVIRONMENT"=development --param="GLOG_V"=10  --param="DATABASE_HOST"=trex-db.$(oc project --short) --param="DATABASE_NAME"=rhtrex  --param="DATABASE_PASSWORD"=foobar-bizz-buzz  --param="DATABASE_PORT"=5432 --param="DATABASE_USER"=trex  --param="DATABASE_SSLMODE"=disable --param="ENABLE_SENTRY"=false --param="SENTRY_KEY"=TODO --param="JWKS_URL"=https://sso.redhat.com/auth/realms/redhat-external/protocol/openid-connect/certs  --param="OCM_SERVICE_CLIENT_ID"=${CLIENT_ID} --param="OCM_SERVICE_CLIENT_SECRET"=${CLIENT_SEC}  --param="OCM_BASE_URL"=https://api.integration.openshift.com --param="IMAGE_REGISTRY="$image_reg --param="IMAGE_REPOSITORY="$image_rep --param="IMAGE_TAG="$image_tag  > /tmp/templates/${outf}.json; done
+              oc apply  -f /tmp/templates/db-template.json
+              sleep 60
+              oc apply  -f /tmp/templates/secrets-template.json
+              oc apply   -f /tmp/templates/service-template.json
+              sleep 60
+              oc expose service trex
+              oc patch route trex -p '{"spec":{"tls":{"termination":"passthrough"}}}'
+              oc get  all
+              oc get  events
+              oc describe  pod -l app=trex
+              oc logs  -l app=trex
+              #ROUTE_NAME=$(oc get  routes trex -o name --insecure-skip-tls-verify)
+              test_namespace=$(oc  project -q)
+              #HOST="trex.${test_namespace}.svc.cluster.local:8000"
+              #HOST="$(oc get service trex -o jsonpath='{.spec.clusterIP}'):8000"
+              HOST=$(oc get "${ROUTE_NAME}" -o jsonpath={.spec.host}  --insecure-skip-tls-verify)
+              echo "Found target host ${HOST} for app ${APPLICATION_NAME}"
+              
+              # Check the application endpoint
+              curl -k https://${HOST}
+              ENDPOINT_OUTPUT=$(curl -k https://${HOST})
+              echo -e "The endpoint outputs the following:\n ${ENDPOINT_OUTPUT}"
+              echo -e "Snapshot output:\n ${SNAPSHOT}"
+              echo ${HOST} > /tekton/home/endpoint_url            
+              echo -n ${HOST} | tee $(results.APP_URL.path)
+              echo '$(params.SNAPSHOT)'|jq -r .components[].name |  tr -d '\n\t' | tee $(results.test_name.path)
+              echo -n 'iteration_duration' | tee $(results.reg_var.path)
+              echo -n "${CHAOS_TEST}" | tee $(results.chaos_test_namespace.path)
+    - name: run-krkn
+      runAfter:
+        - deploy-app-krkn
+      params:
+        - name: bundleImage
+          value: "$(tasks.parse-metadata.results.component-container-image)"
+        - name: SNAPSHOT
+          value: $(params.SNAPSHOT)
+        - name: url
+          value: $(tasks.deploy-app.results.APP_URL)          
+      matrix:
+        params:
+        - name: chaostest
+          value: $(tasks.deploy-app-krkn.results.chaos_test_namespace[*])                 
+      taskSpec:
+        params:
+          - name: bundleImage
+            type: string
+          - name: chaostest
+            type: string
+          - name: SNAPSHOT
+            description: Expected output of the application endpoint
+          - name: url              
+        volumes:
+          - name: credentials
+            emptyDir: {}
+        sidecars:
+        - name: k6-perf
+          image: grafana/k6
+          env:
+            - name: OCM_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: ocm
+                  key: ocmtoken                            
+          script: |
+            #!/usr/bin/env sh
+            export
+            echo "Transform result to json format"
+            wget -O /tmp/ocm https://github.com/openshift-online/ocm-cli/releases/download/v0.1.65/ocm-linux-amd64
+            chmod +x /tmp/ocm
+            echo ${OCM_TOKEN}
+            /tmp/ocm login --token=${OCM_TOKEN} --url=https://$(params.url)
+            export BASE_URL=https://$(params.url)
+            wget -O /tmp/script.js https://raw.githubusercontent.com/yogananth-subramanian/rh-trex/main/.tekton/rhtap-perf-k6-test.js
+            echo -n `/tmp/ocm token`>/tmp/token
+            k6 run /tmp/script.js
+            cat /workspace/output.json
+        steps:
+          - name: get-kubeconfig
+            ref:
+              resolver: git
+              params:
+                - name: url
+                  value: https://github.com/konflux-ci/build-definitions.git
+                - name: revision
+                  value: main
+                - name: pathInRepo
+                  value: stepactions/eaas-get-ephemeral-cluster-credentials/0.1/eaas-get-ephemeral-cluster-credentials.yaml
+            params:
+              - name: eaasSpaceSecretRef
+                value: $(tasks.provision-eaas-space.results.secretRef)
+              - name: clusterName
+                value: "$(tasks.provision-cluster.results.clusterName)"
+              - name: credentials
+                value: credentials             
+          - image: quay.io/krkn-chaos/krkn-hub:$(params.chaostest)
+            imagePullPolicy: Always
+            name: app-test
+            env:        
+              - name: NAMESPACE
+                value: $(params.chaostest)
+              - name: KUBECONFIG
+                value: "/credentials/$(steps.get-kubeconfig.results.kubeconfig)"
+              - name: KRKN_KUBE_CONFIG
+                value: "/credentials/$(steps.get-kubeconfig.results.kubeconfig)"                                               
+              - name: DISTRIBUTION
+                value: 'openshift'
+              - name: TEST
+                value: $(params.chaostest)                             
+            volumeMounts:
+              - name: credentials
+                mountPath: /credentials                                                   
+            script: |
+              set -x
+              export
+              export DURATION=60
+              export DISTRIBUTION='openshift'
+              echo $TEST
+              test=$TEST
+
+              function get_pod_name(){
+                  readarray -t pod_array < <(oc get pods -n $NAMESPACE --field-selector=status.phase=Running -o custom-columns=:metadata.name --no-headers=true)
+                  if [[ ${#pod_array[@]} -eq 0  ]] ;then
+                      exit 1
+                  fi                    
+                  random_index=$((RANDOM % ${#pod_array[@]}))
+                  pod_test=${pod_array[$random_index]}
+                  echo $pod_test    
+              }
+
+              function get_pod_label(){
+                  pod_test=$1
+                  output=$(kubectl get pods  $pod_test -n $NAMESPACE  -o custom-columns=:metadata.labels --no-headers=true)
+                  pod_label=''
+                  max=500;for i in $(echo $output | sed 's/^map\[//; s/\]$//'| sed 's/:/=/g');do min=$(kubectl get pods -l $i -n $NAMESPACE -o custom-columns=:metadata.name --no-headers=true|wc -l) ; if [[ min -eq 1  ]] || [[ min -le max  ]];then max=$min;pod_label=$i;fi;done;
+                  echo $pod_label
+              }
+
+              if [[ ${test} == 'application-outages'  ]] ;then
+                  echo "in app outage"
+                  pod_test=$(get_pod_name)
+                  if [[ -z $pod_test ]] ; then
+                      echo "no pod found"
+                      exit 1
+                  fi                   
+                  export POD_SELECTOR=$(oc get pods -n $NAMESPACE $pod_test  -o jsonpath='{.metadata.labels}')
+                  echo $POD_SELECTOR
+              elif [[ ${test} == 'container-scenarios'  ]] ;then
+                  echo "in container-scenarios"
+                  pod_test=$(get_pod_name)
+                  if [[ -z $pod_test ]] ; then
+                      echo "no pod found"
+                      exit 1
+                  fi                   
+                  export LABEL_SELECTOR=$(get_pod_label ${pod_test})
+                  echo $LABEL_SELECTOR
+                  readarray -t con_array < <(kubectl get pod  $pod_test -n $NAMESPACE -o jsonpath='{.status.containerStatuses[?(@.state.running)].name}')
+                  random_index=$((RANDOM % ${#con_array[@]}))
+                  export CONTAINER_NAME=${con_array[$random_index]}
+                  echo $CONTAINER_NAME    
+              elif [[ ${test} == 'pod-scenarios'  ]] ;then
+                  echo "in pod-scenarios"
+                  pod_test=$(get_pod_name)
+                  if [[ -z $pod_test ]] ; then
+                      echo "no pod found"
+                      exit 1
+                  fi                       
+                  export POD_LABEL=$(get_pod_label ${pod_test})
+                  echo $POD_LABEL    
+              elif [[ ${test} == 'service-disruption-scenarios'  ]] ;then
+                  echo "in service-disruption-scenarios"
+              elif [[ ${test} == 'pvc-scenarios'  ]] ;then
+                  echo "in pvc-scenarios"
+                  readarray -t pvc_array < <(kubectl get pvc -n $NAMESPACE -o jsonpath='{range .items[?(@.status.phase=="Bound")]}{.metadata.name}{"\n"}{end}')
+                  random_index=$((RANDOM % ${#pvc_array[@]}))
+                  export PVC_NAME=${pvc_array[$random_index]}
+                  echo $PVC_NAME     
+              elif [[ ${test} == 'time-scenarios'  ]] ;then
+                  echo "in time-scenarios"
+                  pod_test=$(get_pod_name)
+                  if [[ -z $pod_test ]] ; then
+                      echo "no pod found"
+                      exit 1
+                  fi                       
+                  export LABEL_SELECTOR=$(get_pod_label ${pod_test})
+                  echo $LABEL_SELECTOR    
+              elif [[ ${test} == 'pod-network-chaos'  ]] ;then
+                  echo "in pod-network-chaos"
+                  pod_test=$(get_pod_name)
+                  if [[ -z $pod_test ]] ; then
+                      echo "no pod found"
+                      exit 1
+                  fi                     
+                  export LABEL_SELECTOR=$(get_pod_label ${pod_test})
+                  echo $LABEL_SELECTOR    
+              elif [[ ${test} == 'node-cpu-hog'  ]] ;then
+                  echo "in node-cpu-hog"
+                  pod_test=$(get_pod_name)
+                  if [[ -z $pod_test ]] ; then
+                      echo "no pod found"
+                      exit 1
+                  fi                   
+                  host_ip=$(oc get pods -n $NAMESPACE $pod_test  -o custom-columns=:status.hostIP --no-headers=true)     
+                  node_name=$(kubectl get nodes -o jsonpath='{range .items[*]}{.metadata.name}{" "}{.status.addresses[?(@.address=="$host_ip")].address}{"\n"}{end}' | grep $host_ip | awk '{print $1}')
+                  export NODE_SELECTORS="kubernetes.io/hostname=${node_name}"
+                  echo $NODE_SELECTORS
+              elif [[ ${test} == 'network-chaos'  ]] ;then
+                  echo "in network-chaos"
+                  pod_test=$(get_pod_name)
+                  if [[ -z $pod_test ]] ; then
+                      echo "no pod found"
+                      exit 1
+                  fi                   
+                  host_ip=$(oc get pods -n $NAMESPACE $pod_test  -o custom-columns=:status.hostIP --no-headers=true)     
+                  export NODE_NAME=$(kubectl get nodes -o jsonpath='{range .items[*]}{.metadata.name}{" "}{.status.addresses[?(@.address=="$host_ip")].address}{"\n"}{end}' | grep $host_ip | awk '{print $1}')
+                  echo $NODE_NAME
+              else
+                  echo "invalid testcase name"
+                  exit 1
+              fi                 
+              start_time=$(date +%s)
+              /home/krkn/run.sh
+              TOKEN=$(oc create token prometheus-k8s  -n openshift-monitoring)
+              URL=$(oc get route thanos-querier --template='{{.spec.host}}' -n openshift-monitoring)
+              QUERY="kube_pod_status_phase{namespace='$NAMESPACE', phase='Running'} == 1 and kube_pod_status_phase{namespace='$NAMESPACE', phase='Running'} != nan"
+              Bearer_TOKEN="Authorization: Bearer $TOKEN"
+              start_promql="https://${URL}/api/v1/query_range?start=${start_time}&end=${start_time}&step=1m&format=csv"
+              end_promql="https://${URL}/api/v1/query_range?start=$(date +%s)&end=$(date +%s)&step=1m&format=csv"
+              
+              namespace="sum(kube_namespace_status_phase{namespace='$NAMESPACE',phase='Active'})"
+              deployment="sum(kube_deployment_status_condition{namespace='$NAMESPACE',condition='Available'})"
+              replicaset="count(kube_replicaset_status_ready_replicas{namespace='$NAMESPACE'})"
+              statefulset="sum(kube_statefulset_status_replicas_ready{namespace='$NAMESPACE'})"
+              service="sum(kube_service_info{namespace='$NAMESPACE'})"
+              network_policy="count(kube_networkpolicy_spec_egress_rules{namespace='$NAMESPACE'})"
+              persistent_volume="sum(kube_persistentvolumeclaim_status_phase{namespace='$NAMESPACE',phase='Bound'})"
+              pod="sum(kube_pod_status_phase{namespace='$NAMESPACE', phase='Running'} == 1 and kube_pod_status_phase{namespace='$NAMESPACE', phase='Running'} != nan)"
+
+              end_time=$(date +%s)
+              diff_time=$((end_time - start_time))
+              difference_in_minutes=$((diff_time/ 60))
+
+              for i in namespace deployment replicaset statefulset service network_policy persistent_volume pod;do
+                  old=$(curl -s -k -H "$Bearer_TOKEN"   "$start_promql"  -d "query=${!i}"|jq -r '.data.result[0].values[0][1]')
+                  new=$(curl -s -k -H "$Bearer_TOKEN"   "$end_promql"  -d "query=${!i}"|jq -r '.data.result[0].values[0][1]')
+                  if [[ $old == $new ]]; then
+                      echo "no change in ${i} count"
+                  else
+                      echo "Change in ${i} count"
+                  fi    
+              done
+
+
+              for i in $( curl -s -k -H "$Bearer_TOKEN"   "$start_promql"  -d "query=$QUERY"| jq -r '.data.result[].metric.pod'); do
+                  #oc delete pod  ${i} -n test1
+                  pod_query="kube_pod_info{namespace='$NAMESPACE',pod='$i'}"
+                  old=$(curl -s -k -H "$Bearer_TOKEN"   "$start_promql"  -d "query=$pod_query" | jq -r '.data.result[].metric.pod_ip')
+                  new=$(curl -s -k -H "$Bearer_TOKEN"   "$end_promql"  -d "query=$pod_query" | jq -r '.data.result[].metric.pod_ip')
+                  if [[ $old == $new ]]; then
+                      echo "no change in ip of the pod $i"
+                      a=1
+                  else
+                      echo "Change in ip of the pod $i"
+                      a=1
+                  fi
+                  old=$(curl -s -k -H "$Bearer_TOKEN"   "$start_promql"  -d "query=$pod_query" | jq -r '.data.result[].metric.host_ip')
+                  new=$(curl -s -k -H "$Bearer_TOKEN"   "$end_promql"  -d "query=$pod_query" | jq -r '.data.result[].metric.host_ip')
+                  if [[ $old == $new ]]; then
+                      echo "no change in host ip of the pod $i"
+                      a=1
+                  else
+                      echo "Change in host ip of the pod" $i
+                      a=1
+                  fi
+              done
+
+              for i in $( curl -s -k -H "$Bearer_TOKEN"   "$end_promql"  -d "query=$QUERY"| jq -r '.data.result[].metric.pod'); do
+                  kubectl logs -n $NAMESPACE $i  --since=${difference_in_minutes}m
+              done
+
+              kubectl get events -n $NAMESPACE -o json | jq --argjson timestamp "$start_time" '.items[] | select((.metadata.creationTimestamp | fromdateiso8601) >= $timestamp) | {timestamp: .metadata.creationTimestamp, type: .type, reason: .reason, message: .message}'        
+       
+
+
+
