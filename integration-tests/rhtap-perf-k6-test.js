@@ -18,7 +18,7 @@ export const options = {
     k6_rhtrex: {
       executor: 'constant-arrival-rate',
       rate: 1,
-      duration: '300s',
+      duration: '60s',
       preAllocatedVUs: 5,
     },
   },
