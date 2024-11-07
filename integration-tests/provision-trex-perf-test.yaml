@@ -243,7 +243,7 @@ spec:
         - name: SNAPSHOT
           value: $(params.SNAPSHOT)
         - name: url
-          value: $(tasks.deploy-app.results.APP_URL)          
+          value: $(tasks.deploy-app-krkn.results.APP_URL)          
       matrix:
         params:
         - name: chaostest
