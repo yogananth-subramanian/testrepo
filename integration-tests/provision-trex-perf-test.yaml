@@ -262,27 +262,30 @@ spec:
           - name: credentials
             emptyDir: {}
         sidecars:
-        - name: k6-perf
-          image: grafana/k6
-          env:
-            - name: OCM_TOKEN
-              valueFrom:
-                secretKeyRef:
-                  name: ocm
-                  key: ocmtoken                            
-          script: |
-            #!/usr/bin/env sh
-            export
-            echo "Transform result to json format"
-            wget -O /tmp/ocm https://github.com/openshift-online/ocm-cli/releases/download/v0.1.65/ocm-linux-amd64
-            chmod +x /tmp/ocm
-            echo ${OCM_TOKEN}
-            /tmp/ocm login --token=${OCM_TOKEN} --url=https://$(params.url)
-            export BASE_URL=https://$(params.url)
-            wget -O /tmp/script.js https://raw.githubusercontent.com/yogananth-subramanian/testrepo/refs/heads/main/integration-tests/rhtap-perf-k6-test.js
-            echo -n `/tmp/ocm token`>/tmp/token
-            k6 run /tmp/script.js
-            cat /workspace/output.json
+          - name: k6-perf
+            image: grafana/k6
+            env:
+              - name: OCM_TOKEN
+                valueFrom:
+                  secretKeyRef:
+                    name: ocm
+                    key: ocmtoken
+            volumeMounts:
+              - name: credentials
+                mountPath: /workspace                                               
+            script: |
+              #!/usr/bin/env sh
+              export
+              echo "Transform result to json format"
+              wget -O /tmp/ocm https://github.com/openshift-online/ocm-cli/releases/download/v0.1.65/ocm-linux-amd64
+              chmod +x /tmp/ocm
+              echo ${OCM_TOKEN}
+              /tmp/ocm login --token=${OCM_TOKEN} --url=https://$(params.url)
+              export BASE_URL=https://$(params.url)
+              wget -O /tmp/script.js https://raw.githubusercontent.com/yogananth-subramanian/testrepo/refs/heads/main/integration-tests/rhtap-perf-k6-test.js
+              echo -n `/tmp/ocm token`>/tmp/token
+              k6 run /tmp/script.js
+              cat /workspace/output.json
         steps:
           - name: get-kubeconfig
             ref:
