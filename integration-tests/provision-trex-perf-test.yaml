@@ -225,8 +225,8 @@ spec:
               echo "Found target host ${HOST} for app ${APPLICATION_NAME}"
               
               # Check the application endpoint
-              curl -k https://${HOST}:8000
-              ENDPOINT_OUTPUT=$(curl -k https://${HOST}:8000)
+              curl -k https://${HOST}
+              ENDPOINT_OUTPUT=$(curl -k https://${HOST})
               echo -e "The endpoint outputs the following:\n ${ENDPOINT_OUTPUT}"
               echo -e "Snapshot output:\n ${SNAPSHOT}"
               echo ${HOST} > /tekton/home/endpoint_url            
@@ -277,8 +277,8 @@ spec:
             wget -O /tmp/ocm https://github.com/openshift-online/ocm-cli/releases/download/v0.1.65/ocm-linux-amd64
             chmod +x /tmp/ocm
             echo ${OCM_TOKEN}
-            /tmp/ocm login --token=${OCM_TOKEN} --url=https://$(params.url):8000
-            export BASE_URL=https://$(params.url):8000
+            /tmp/ocm login --token=${OCM_TOKEN} --url=https://$(params.url)
+            export BASE_URL=https://$(params.url)
             wget -O /tmp/script.js https://raw.githubusercontent.com/yogananth-subramanian/testrepo/refs/heads/main/integration-tests/rhtap-perf-k6-test.js
             echo -n `/tmp/ocm token`>/tmp/token
             k6 run /tmp/script.js
