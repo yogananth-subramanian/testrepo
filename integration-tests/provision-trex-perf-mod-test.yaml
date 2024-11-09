@@ -56,11 +56,11 @@ spec:
         resolver: git
         params:
           - name: url
-            value: https://github.com/konflux-ci/build-definitions.git
+            value: https://github.com/yogananth-subramanian/testrepo.git
           - name: revision
             value: main
           - name: pathInRepo
-            value: task/eaas-provision-space/0.1/eaas-provision-space.yaml
+            value: integration-tests/task-provison-cluster.yaml
       params:
         - name: eaasSpaceSecretRef
           value: $(tasks.provision-eaas-space.results.secretRef)
@@ -121,11 +121,11 @@ spec:
               resolver: git
               params:
                 - name: url
-                  value: https://github.com/konflux-ci/build-definitions.git
+                  value: https://github.com/yogananth-subramanian/testrepo.git
                 - name: revision
                   value: main
                 - name: pathInRepo
-                  value: stepactions/eaas-get-ephemeral-cluster-credentials/0.1/eaas-get-ephemeral-cluster-credentials.yaml
+                  value: integration-tests/step-deploy-app.yaml
             params:
               - name: SNAPSHOT
                 value: $(params.SNAPSHOT)
