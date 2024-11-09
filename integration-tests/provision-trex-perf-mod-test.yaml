@@ -132,7 +132,9 @@ spec:
               - name: ocmSecretRef
                 value: ocm
               - name: credentials
-                value: credentials  
+                value: credentials
+              - name: chaostest
+                value: $(params.chaostest)
     - name: run-krkn
       runAfter:
         - deploy-app-krkn
