@@ -26,9 +26,9 @@ spec:
     - name: KUBECONFIG
       value: "/credentials/$(steps.get-kubeconfig.results.kubeconfig)"
     - name: CHAOS_TEST
-      value: $(params.chaostest)                
+      value: "$(params.chaostest)"                
     - name: SNAPSHOT
-      value: $(params.SNAPSHOT)
+      value: "$(params.SNAPSHOT)"
     - name: CLIENT_ID
       valueFrom:
         secretKeyRef:
@@ -99,6 +99,6 @@ spec:
     echo -e "Snapshot output:\n ${SNAPSHOT}"
     echo ${HOST} > /tekton/home/endpoint_url            
     echo -n ${HOST} | tee $(results.APP_URL.path)
-    echo '$(params.SNAPSHOT)'|jq -r .components[].name |  tr -d '\n\t' | tee $(results.test_name.path)
+    echo '${SNAPSHOT}'|jq -r .components[].name |  tr -d '\n\t' | tee $(results.test_name.path)
     echo -n 'iteration_duration' | tee $(results.reg_var.path)
     echo -n "${CHAOS_TEST}" | tee $(results.chaos_test_namespace.path)
