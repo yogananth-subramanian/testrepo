@@ -1,0 +1,54 @@
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: provision-cluster
+spec:
+  params:
+    - name: credentials
+      type: string
+    - name: chaostest
+      type: string
+    - name: KUBECONFIG
+      type: string
+    - name: clusterName
+      type: string
+    - name: eaasSpaceSecretRef
+      type: string                    
+  volumes:
+    - name: credentials
+      emptyDir: {}
+  steps:
+    - name: get-kubeconfig
+      ref:
+        resolver: git
+        params:
+          - name: url
+            value: https://github.com/konflux-ci/build-definitions.git
+          - name: revision
+            value: main
+          - name: pathInRepo
+            value: stepactions/eaas-get-ephemeral-cluster-credentials/0.1/eaas-get-ephemeral-cluster-credentials.yaml
+      params:
+        - name: eaasSpaceSecretRef
+          value: $(params.eaasSpaceSecretRef)
+        - name: clusterName
+          value: $(params.clusterName)
+        - name: credentials
+          value: credentials
+    - name: app-test
+      ref:
+        resolver: git
+        params:
+          - name: url
+            value: https://github.com/yogananth-subramanian/testrepo.git
+          - name: revision
+            value: main
+          - name: pathInRepo
+            value: integration-tests/step-deploy-krkn.yaml
+      params:
+        - name: KUBECONFIG
+          value: $(params.clusterName)
+        - name: credentials
+          value: credentials
+        - name: chaostest
+          value: $(params.chaostest)          
