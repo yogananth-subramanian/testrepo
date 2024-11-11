@@ -11,7 +11,6 @@ spec:
       description: Namespace to deploy app to for testing
     - name: credentials
       description: A volume to which the remote cluster credentials will be written.  
-  imagePullPolicy: Always
   env:        
     - name: NAMESPACE
       value: $(params.chaostest)
