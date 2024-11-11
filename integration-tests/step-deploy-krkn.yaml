@@ -12,7 +12,6 @@ spec:
     - name: credentials
       description: A volume to which the remote cluster credentials will be written.  
   imagePullPolicy: Always
-  name: app-test
   env:        
     - name: NAMESPACE
       value: $(params.chaostest)
