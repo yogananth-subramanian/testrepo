@@ -139,10 +139,10 @@ spec:
       runAfter:
         - deploy-app-krkn
       params:
-        - name: bundleImage
-          value: "$(tasks.parse-metadata.results.component-container-image)"
-        - name: SNAPSHOT
-          value: $(params.SNAPSHOT)        
+        - name: eaasSpaceSecretRef
+          value: $(tasks.provision-eaas-space.results.secretRef)
+        - name: clusterName
+          value: "$(tasks.provision-cluster.results.clusterName)"                  
       matrix:
         params:
         - name: chaostest
@@ -200,9 +200,9 @@ spec:
                   value: stepactions/eaas-get-ephemeral-cluster-credentials/0.1/eaas-get-ephemeral-cluster-credentials.yaml
             params:
               - name: eaasSpaceSecretRef
-                value: $(tasks.provision-eaas-space.results.secretRef)
+                value: $(params.eaasSpaceSecretRef)
               - name: clusterName
-                value: "$(tasks.provision-cluster.results.clusterName)"
+                value: "$(params.clusterName)"
               - name: credentials
                 value: credentials
           - name: app-test
