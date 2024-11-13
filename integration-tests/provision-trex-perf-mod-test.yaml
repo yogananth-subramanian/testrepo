@@ -151,12 +151,12 @@ spec:
           value: $(tasks.deploy-app-krkn.results.APP_URL[*])                             
       taskSpec:
         params:
-          - name: bundleImage
+          - name: eaasSpaceSecretRef
             type: string
+          - name: clusterName
+            type: string                         
           - name: chaostest
             type: string
-          - name: SNAPSHOT
-            description: Expected output of the application endpoint
           - name: url
             type: string              
         volumes:
