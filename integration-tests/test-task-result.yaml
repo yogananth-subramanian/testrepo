@@ -5,12 +5,12 @@ metadata:
 spec:
   params:
     - name: name
-      type: array
+      type: string
     - name: age
       type: string      
   results:
     - name: TEST_TASK_OUTPUT
-      type: string          
+      type: array   
   steps:
     - name: step1
       image: registry.access.redhat.com/ubi8/ubi
