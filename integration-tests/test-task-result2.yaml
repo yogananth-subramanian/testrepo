@@ -12,5 +12,6 @@ spec:
       args: ["$(params.myname[*])"]
       script: |
         #!/bin/env bash
+        echo $@
         echo "in task2"
 
