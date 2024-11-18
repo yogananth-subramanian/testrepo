@@ -27,7 +27,9 @@ spec:
     - name: pipepline-task2
       params:
         - name: age
-          value: output0     
+          value: output0
+      results:
+        - name: TEST_TASK_OUTPUT                 
       runAfter:
         - pipepline-task1   
       taskRef:
