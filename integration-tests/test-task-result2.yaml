@@ -5,9 +5,6 @@ metadata:
 spec:
   params:
     - name: name
-      type: array
-  results:
-    - name: TEST_TASK_OUTPUT2
   steps:
     - name: step1
       image: registry.access.redhat.com/ubi8/ubi
