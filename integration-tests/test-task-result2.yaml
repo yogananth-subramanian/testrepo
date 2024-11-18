@@ -5,7 +5,7 @@ metadata:
 spec:
   params:
     - name: name
-      type: string
+      type: array
   results:
     - name: TEST_TASK_OUTPUT2
   steps:
