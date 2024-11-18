@@ -25,9 +25,6 @@ spec:
           - name: name
             value: $(params.name[*])
     - name: pipepline-task2
-      params:
-        - name: age
-          value: output0
       runAfter:
         - pipepline-task1   
       taskRef:
@@ -38,7 +35,7 @@ spec:
           - name: revision
             value: main
           - name: pathInRepo
-            value: integration-tests/test-task-result.yaml
+            value: integration-tests/test-task-result2.yaml
       matrix:
         params:
         - name: name
