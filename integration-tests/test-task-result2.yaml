@@ -11,4 +11,4 @@ spec:
       image: registry.access.redhat.com/ubi8/ubi
       script: |
         #!/bin/env bash
-        echo "in pipeline"
+        echo "in pipeline $(params.name)"
