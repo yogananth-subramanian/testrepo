@@ -50,10 +50,12 @@ spec:
           - name: myname
             type: array
         steps:
-          - image: mirror.gcr.io/alpine
-            name: step1
-            command: ["echo"]
+          - name: step1
+            image: registry.access.redhat.com/ubi8/ubi
             args: ["$(params.myname[*])"]
+            script: |
+              #!/bin/env bash
+              printf "%s\n" "$@"
          
 
                                        
