@@ -46,7 +46,7 @@ spec:
     - name: pipepline-task3
       params:    
         - name: name
-          value: "test1"
+          value: $(tasks.pipepline-task2.results.TEST_TASK_OUTPUT[*])
       runAfter:
         - pipepline-task2
         - pipepline-task1   
