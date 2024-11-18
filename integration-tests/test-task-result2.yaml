@@ -4,11 +4,13 @@ metadata:
   name: task2
 spec:
   params:
-    - name: name
+    - name: myname
       type: array
   steps:
     - name: step1
       image: registry.access.redhat.com/ubi8/ubi
       script: |
         #!/bin/env bash
-        echo "in pipeline $(params.name[@])"
+        for item in $(echo "$(params.myname[@]"); do
+          echo "$item"
+        done        
