@@ -28,8 +28,8 @@ spec:
       runAfter:
         - pipepline-task1
       params:
-      - name: name
-        value: $(tasks.pipepline-task1.results.TEST_TASK_OUTPUT[*])           
+        - name: name
+          value: $(tasks.pipepline-task1.results.TEST_TASK_OUTPUT[*])           
       taskRef:
         resolver: git
         params:
