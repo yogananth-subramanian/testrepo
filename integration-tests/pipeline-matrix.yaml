@@ -39,6 +39,20 @@ spec:
             value: main
           - name: pathInRepo
             value: integration-tests/test-task-result2.yaml
+    - name: pipepline-task3
+      runAfter:
+        - pipepline-task2
+      taskSpec:
+        params:
+          - name: myname
+            value: $(tasks.pipepline-task1.results.TEST_TASK_OUTPUT[*])
+            type: array
+        steps:
+          - image: mirror.gcr.io/alpine
+            name: step1
+            command: ["echo"]
+            args: ["$(params.myname[*])"]
+         
 
                                        
         
