@@ -12,6 +12,4 @@ spec:
       script: |
         #!/bin/env bash
         echo "$(params.myname)"
-        #for item in $(echo "$(params.myname[@]"); do
-        #  echo "$item"
-        #done        
+
