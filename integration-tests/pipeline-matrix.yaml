@@ -7,7 +7,7 @@ spec:
     - name: name
       default: ["output1", "output2"]
   tasks:
-    - name: pipepline-task1-$(params.name)
+    - name: pipepline-task1
       params:
         - name: age
           value: output0   
