@@ -10,7 +10,7 @@ spec:
       type: string      
   results:
     - name: TEST_TASK_OUTPUT
-      type: array   
+      type: string 
   steps:
     - name: step1
       image: registry.access.redhat.com/ubi8/ubi
