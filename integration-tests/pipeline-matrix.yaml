@@ -48,6 +48,7 @@ spec:
       taskSpec:
         params:
           - name: myname
+            type: array
         steps:
           - image: mirror.gcr.io/alpine
             name: step1
