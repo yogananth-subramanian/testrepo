@@ -26,7 +26,10 @@ spec:
             value: $(params.name[*])
     - name: pipepline-task2
       runAfter:
-        - pipepline-task1   
+        - pipepline-task1
+      params:
+      - name: name
+        value: $(tasks.pipepline-task1.results.TEST_TASK_OUTPUT[*])           
       taskRef:
         resolver: git
         params:
@@ -36,10 +39,7 @@ spec:
             value: main
           - name: pathInRepo
             value: integration-tests/test-task-result2.yaml
-      matrix:
-        params:
-        - name: name
-          value: $(tasks.pipepline-task1.results.TEST_TASK_OUTPUT[*])
+
                                        
         
 
