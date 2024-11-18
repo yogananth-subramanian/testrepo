@@ -167,7 +167,6 @@ spec:
             #cat /workspace/output.json
       runAfter:
         - deploy-app
-        - extract-secrets    
   finally:
     - name: cleanup  
       params:
