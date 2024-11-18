@@ -48,7 +48,8 @@ spec:
         - name: name
           value: $(tasks.pipepline-task2.results.TEST_TASK_OUTPUT[*])
       runAfter:
-        - pipepline-task2   
+        - pipepline-task2
+        - pipepline-task1   
       taskRef:
         resolver: git
         params:
