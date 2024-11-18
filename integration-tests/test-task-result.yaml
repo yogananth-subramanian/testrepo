@@ -17,4 +17,5 @@ spec:
       script: |
         #!/bin/env bash
         echo "in pipeline $(params.name)"
-        echo -n "$(params.name)" | tee $(results.TEST_TASK_OUTPUT.path)
+        #echo -n "$(params.name)" | tee $(results.TEST_TASK_OUTPUT.path)
+        echo -n "[\"linux\",\"mac\",\"windows\"]" | tee $(results.TEST_TASK_OUTPUT.path)
