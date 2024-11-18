@@ -5,6 +5,7 @@ metadata:
 spec:
   params:
     - name: myname
+      type: string
   steps:
     - name: step1
       image: registry.access.redhat.com/ubi8/ubi
