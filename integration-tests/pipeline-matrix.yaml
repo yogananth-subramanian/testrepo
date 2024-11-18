@@ -49,7 +49,6 @@ spec:
           value: output0       
         - name: name
           value: $(tasks.pipepline-task2.results.TEST_TASK_OUTPUT[*])
-          type: string
       runAfter:
         - pipepline-task2   
       taskRef:
