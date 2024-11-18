@@ -48,7 +48,7 @@ spec:
         - name: age
           value: output0       
         - name: name
-          value: $(tasks.pipepline-task2.results.TEST_TASK_OUTPUT[*])     
+          value: $(tasks.pipepline-task1.results.TEST_TASK_OUTPUT[*])     
       runAfter:
         - pipepline-task2   
       taskRef:
