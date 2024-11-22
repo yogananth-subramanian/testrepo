@@ -89,7 +89,7 @@ spec:
             value: main
           - name: pathInRepo
             value: integration-tests/task-run-app.yaml                         
-    - name: run-krkn
+    - name: run-krkn1
       runAfter:
         - deploy-app-krkn
       params:
@@ -117,7 +117,7 @@ spec:
         - run-krkn
       params:
         - name: krkn-result
-          value: $(tasks.run-krkn.results.KRKN_OUTPUT[*])         
+          value: $(tasks.run-krkn1.results.KRKN_OUTPUT[*])         
       taskSpec:
         params:
           - name: krkn-result
