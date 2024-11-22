@@ -28,8 +28,12 @@ spec:
       runAfter:
         - pipepline-task1
       params:
-        - name: myname
-          value: $(tasks.pipepline-task1.results.TEST_TASK_OUTPUT[*])           
+        - name: age
+          value: output1           
+      matrix:
+        params:
+          - name: name
+            value: $(tasks.pipepline-task1.results.TEST_TASK_OUTPUT[*])                     
       taskRef:
         resolver: git
         params:
@@ -38,7 +42,7 @@ spec:
           - name: revision
             value: main
           - name: pathInRepo
-            value: integration-tests/test-task-result2.yaml
+            value: integration-tests/test-task-result.yaml
     - name: pipepline-task3
       runAfter:
         - pipepline-task1
