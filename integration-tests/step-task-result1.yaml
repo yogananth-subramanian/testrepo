@@ -1,0 +1,25 @@
+apiVersion: tekton.dev/v1alpha1
+kind: StepAction
+metadata:
+  name: step1
+spec:
+  image: registry.access.redhat.com/ubi8/ubi
+  params:
+    - name: name
+      type: string
+    - name: age
+      type: string
+  env:
+    - name: name
+      value: $(params.name)
+    - name: age
+      value: $(params.age)           
+  results:
+    - name: TEST_TASK_OUTPUT1
+      type: string
+  script: |
+    #!/bin/env bash
+    echo "in pipeline ${name}"
+    #echo -n "[\"${name}\"]" | tee $(results.TEST_TASK_OUTPUT1.path)
+    echo -n "${name}" | tee $(results.TEST_TASK_OUTPUT1.path)
+    #echo -n "[\"linux\",\"mac\",\"windows\"]" | tee $(results.TEST_TASK_OUTPUT1.path)  
