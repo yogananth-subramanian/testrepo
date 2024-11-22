@@ -14,8 +14,6 @@ spec:
       type: string
   results:
     - name: KRKN_OUTPUT
-      value: "$(steps.app-test.results.KRKN_OUTPUT)"
-      type: string                             
   volumes:
     - name: credentials
       emptyDir: {}
