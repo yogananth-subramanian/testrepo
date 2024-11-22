@@ -111,7 +111,7 @@ spec:
           - name: revision
             value: main
           - name: pathInRepo
-            value: integration-tests/task-run-krkn-perf.yaml
+            value: integration-tests/task-run-krkn-perf-matrix.yaml
     - name: summarize-result
       runAfter:
         - run-krkn
