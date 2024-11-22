@@ -13,10 +13,17 @@ spec:
       type: string 
   steps:
     - name: step1
-      image: registry.access.redhat.com/ubi8/ubi
-      script: |
-        #!/bin/env bash
-        echo "in pipeline $(params.name)"
-        #echo -n "[\"$(params.name)\"]" | tee $(results.TEST_TASK_OUTPUT.path)
-        echo -n "$(params.name)" | tee $(results.TEST_TASK_OUTPUT.path)
-        #echo -n "[\"linux\",\"mac\",\"windows\"]" | tee $(results.TEST_TASK_OUTPUT.path)
+      ref:
+        resolver: git
+        params:
+          - name: url
+            value: https://github.com/yogananth-subramanian/testrepo.git
+          - name: revision
+            value: main
+          - name: pathInRepo
+            value: integration-tests/step-task-result.yaml
+      params:
+        - name: name
+          value: $(params.name)
+        - name: age
+          value: "$(params.age)"
