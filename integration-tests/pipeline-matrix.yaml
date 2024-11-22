@@ -62,10 +62,10 @@ spec:
               printf "%s\n" "$@"
     - name: summarize-result
       runAfter:
-        - pipepline-task1
+        - pipepline-task3
       params:
         - name: krkn-result
-          value: $(tasks.pipepline-task1.results.TEST_TASK_OUTPUT[*])         
+          value: $(tasks.pipepline-task3.results.TEST_TASK_OUTPUT[*])         
       taskSpec:
         params:
           - name: krkn-result
