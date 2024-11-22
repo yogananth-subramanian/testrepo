@@ -1,0 +1,28 @@
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: task2
+spec:
+  params:
+    - name: name
+      type: string
+    - name: age
+      type: string      
+  results:
+    - name: TEST_TASK_OUTPUT1
+  steps:
+    - name: step1
+      ref:
+        resolver: git
+        params:
+          - name: url
+            value: https://github.com/yogananth-subramanian/testrepo.git
+          - name: revision
+            value: main
+          - name: pathInRepo
+            value: integration-tests/step-task-result.yaml
+      params:
+        - name: name
+          value: $(params.name)
+        - name: age
+          value: "$(params.age)"
