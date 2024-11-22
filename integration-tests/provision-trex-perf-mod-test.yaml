@@ -96,7 +96,10 @@ spec:
         - name: eaasSpaceSecretRef
           value: $(tasks.provision-eaas-space.results.secretRef)
         - name: clusterName
-          value: "$(tasks.provision-cluster.results.clusterName)"                  
+          value: "$(tasks.provision-cluster.results.clusterName)"
+      results:
+        - name: KRKN_OUTPUT
+          type: string                            
       matrix:
         params:
         - name: chaostest
