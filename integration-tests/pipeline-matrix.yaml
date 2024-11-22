@@ -7,7 +7,26 @@ spec:
     - name: name
       default: ["output1", "output2"]
   tasks:
+    - name: pipepline-task2
+      params:
+        - name: age
+          value: output1           
+      matrix:
+        params:
+          - name: name
+            value: $(params.name[*])                     
+      taskRef:
+        resolver: git
+        params:
+          - name: url
+            value: https://github.com/yogananth-subramanian/testrepo
+          - name: revision
+            value: main
+          - name: pathInRepo
+            value: integration-tests/test-task-result1.yaml
     - name: pipepline-task1
+      runAfter:
+        - pipepline-task2    
       params:
         - name: age
           value: output0   
@@ -23,26 +42,7 @@ spec:
       matrix:
         params:
           - name: name
-            value: $(params.name[*])
-    - name: pipepline-task2
-      runAfter:
-        - pipepline-task1
-      params:
-        - name: age
-          value: output1           
-      matrix:
-        params:
-          - name: name
-            value: $(tasks.pipepline-task1.results.TEST_TASK_OUTPUT[*])                     
-      taskRef:
-        resolver: git
-        params:
-          - name: url
-            value: https://github.com/yogananth-subramanian/testrepo
-          - name: revision
-            value: main
-          - name: pathInRepo
-            value: integration-tests/test-task-result1.yaml
+            value: $(tasks.pipepline-task2.results.TEST_TASK_OUTPUT1[*])            
     - name: pipepline-task3
       runAfter:
         - pipepline-task1
