@@ -20,7 +20,7 @@ spec:
           - name: revision
             value: main
           - name: pathInRepo
-            value: integration-tests/step-task-result.yaml
+            value: integration-tests/step-task-result1.yaml
       params:
         - name: name
           value: $(params.name)
