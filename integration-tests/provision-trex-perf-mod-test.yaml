@@ -112,9 +112,6 @@ spec:
             value: main
           - name: pathInRepo
             value: integration-tests/task-run-krkn-perf-matrix.yaml
-      results:
-        - name: KRKN_OUTPUT
-          type: string               
     - name: summarize-result
       runAfter:
         - run-krkn1
