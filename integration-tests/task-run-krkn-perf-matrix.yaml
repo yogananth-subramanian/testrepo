@@ -1,0 +1,81 @@
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: krkn-perf-task
+spec:
+  params:
+    - name: eaasSpaceSecretRef
+      type: string
+    - name: clusterName
+      type: string                         
+    - name: chaostest
+      type: string
+    - name: url
+      type: string
+  results:
+    - name: KRKN_OUTPUT
+  volumes:
+    - name: credentials
+      emptyDir: {}
+  sidecars:
+    - name: k6-perf
+      image: grafana/k6
+      env:
+        - name: URL
+          value: $(params.url)      
+        - name: OCM_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: ocm
+              key: ocmtoken
+      volumeMounts:
+        - name: credentials
+          mountPath: /workspace                                               
+      script: |
+        #!/usr/bin/env sh
+        export
+        echo "Transform result to json format"
+        wget -O /tmp/ocm https://github.com/openshift-online/ocm-cli/releases/download/v0.1.65/ocm-linux-amd64
+        chmod +x /tmp/ocm
+        echo ${OCM_TOKEN}
+        /tmp/ocm login --token=${OCM_TOKEN} --url=https://${URL}
+        export BASE_URL=https://${URL}
+        wget -O /tmp/script.js https://raw.githubusercontent.com/yogananth-subramanian/testrepo/refs/heads/main/integration-tests/rhtap-perf-k6-test.js
+        echo -n `/tmp/ocm token`>/tmp/token
+        k6 run /tmp/script.js
+        cat /workspace/output.json
+  steps:
+    - name: get-kubeconfig
+      ref:
+        resolver: git
+        params:
+          - name: url
+            value: https://github.com/konflux-ci/build-definitions.git
+          - name: revision
+            value: main
+          - name: pathInRepo
+            value: stepactions/eaas-get-ephemeral-cluster-credentials/0.1/eaas-get-ephemeral-cluster-credentials.yaml
+      params:
+        - name: eaasSpaceSecretRef
+          value: $(params.eaasSpaceSecretRef)
+        - name: clusterName
+          value: "$(params.clusterName)"
+        - name: credentials
+          value: credentials
+    - name: app-test
+      ref:
+        resolver: git
+        params:
+          - name: url
+            value: https://github.com/yogananth-subramanian/testrepo.git
+          - name: revision
+            value: main
+          - name: pathInRepo
+            value: integration-tests/step-deploy-krkn.yaml
+      params:
+        - name: KUBECONFIG
+          value: "/credentials/$(steps.get-kubeconfig.results.kubeconfig)"
+        - name: credentials
+          value: credentials
+        - name: chaostest
+          value: $(params.chaostest)          

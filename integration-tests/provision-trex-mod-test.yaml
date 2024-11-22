@@ -88,7 +88,7 @@ spec:
           - name: revision
             value: main
           - name: pathInRepo
-            value: integration-tests/task-run-app.yaml                         
+            value: integration-tests/task-run-krkn-perf-matrix.yaml                      
     - name: run-krkn
       runAfter:
         - deploy-app-krkn
