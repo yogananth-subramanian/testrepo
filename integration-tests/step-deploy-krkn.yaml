@@ -10,7 +10,10 @@ spec:
     - name: chaostest
       description: Namespace to deploy app to for testing
     - name: credentials
-      description: A volume to which the remote cluster credentials will be written.  
+      description: A volume to which the remote cluster credentials will be written.
+  results:
+    - name: KRKN_OUTPUT
+      type: string          
   env:        
     - name: NAMESPACE
       value: $(params.chaostest)
@@ -193,7 +196,9 @@ spec:
         kubectl logs -n $NAMESPACE $i  --since=${difference_in_minutes}m
     done
 
-    kubectl get events -n $NAMESPACE -o json | jq --argjson timestamp "$start_time" '.items[] | select((.metadata.creationTimestamp | fromdateiso8601) >= $timestamp) | {timestamp: .metadata.creationTimestamp, type: .type, reason: .reason, message: .message}'        
+    kubectl get events -n $NAMESPACE -o json | jq --argjson timestamp "$start_time" '.items[] | select((.metadata.creationTimestamp | fromdateiso8601) >= $timestamp) | {timestamp: .metadata.creationTimestamp, type: .type, reason: .reason, message: .message}'
+    ls kraken.report
+    sed -n '/{/,/^}$/p' kraken.report |jq .telemetry.scenarios[0] | tee $(results.KRKN_OUTPUT.path)        
 
 
 
