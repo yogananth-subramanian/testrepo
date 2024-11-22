@@ -114,6 +114,7 @@ spec:
             value: integration-tests/task-run-krkn-perf-matrix.yaml
     - name: summarize-result
       runAfter:
+        - deploy-app-krkn
         - run-krkn1
       params:
         - name: krkn-result
