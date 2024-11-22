@@ -77,7 +77,29 @@ spec:
             args: ["$(params.krkn-result[*])"]
             script: |
               #!/bin/env bash
-              printf "%s\n" "$@"           
+              printf "%s\n" "$@"
+  finally:
+    - name: cleanup  
+      params:
+        - name: aggregateTasksStatus
+          value: "$(tasks.status)"
+      taskSpec:
+        results:
+          - name: TEST_OUTPUT
+        params:
+          - name: aggregateTasksStatus
+        steps:
+        - image: quay.io/yogananth_subramanian/curl-yq-jq  
+          name: step1
+          script: |
+            RESULT="SUCCESS"
+            if [ $(params.aggregateTasksStatus) == "Failed" ]
+            then
+              RESULT="FAILURE"
+            fi
+            TEST_OUTPUT=$(jq -rc --arg date $(date +%s) --arg RESULT "${RESULT}" --null-input \
+            '{result: $RESULT, timestamp: $date, failures: 0, successes: 0, warnings: 0}')
+            echo -n "${TEST_OUTPUT}" | tee $(results.TEST_OUTPUT.path)                         
 
                                        
         
