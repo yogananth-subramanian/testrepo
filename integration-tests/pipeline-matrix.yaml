@@ -83,13 +83,18 @@ spec:
       params:
         - name: aggregateTasksStatus
           value: "$(tasks.status)"
+        - name: krkn-result
+          value: $(tasks.pipepline-task1.results.TEST_TASK_OUTPUT[*])            
       taskSpec:
         results:
           - name: TEST_OUTPUT
         params:
           - name: aggregateTasksStatus
+          - name: krkn-result
+            type: array
         steps:
-        - image: quay.io/yogananth_subramanian/curl-yq-jq  
+        - image: quay.io/yogananth_subramanian/curl-yq-jq
+          args: ["$(params.krkn-result[*])"]  
           name: step1
           script: |
             RESULT="SUCCESS"
@@ -99,6 +104,7 @@ spec:
             fi
             TEST_OUTPUT=$(jq -rc --arg date $(date +%s) --arg RESULT "${RESULT}" --null-input \
             '{result: $RESULT, timestamp: $date, failures: 0, successes: 0, warnings: 0}')
+            printf "%s\n" "$@"
             echo -n "${TEST_OUTPUT}" | tee $(results.TEST_OUTPUT.path)                         
 
                                        
