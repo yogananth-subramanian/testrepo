@@ -56,7 +56,23 @@ spec:
             script: |
               #!/bin/env bash
               printf "%s\n" "$@"
-         
+    - name: summarize-result
+      runAfter:
+        - pipepline-task1
+      params:
+        - name: krkn-result
+          value: $(tasks.pipepline-task1.results.TEST_TASK_OUTPUT[*])         
+      taskSpec:
+        params:
+          - name: krkn-result
+            type: array
+        steps:
+          - name: step1
+            image: registry.access.redhat.com/ubi8/ubi
+            args: ["$(params.krkn-result[*])"]
+            script: |
+              #!/bin/env bash
+              printf "%s\n" "$@"           
 
                                        
         

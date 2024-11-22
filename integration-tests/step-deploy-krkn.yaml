@@ -199,7 +199,7 @@ spec:
     kubectl get events -n $NAMESPACE -o json | jq --argjson timestamp "$start_time" '.items[] | select((.metadata.creationTimestamp | fromdateiso8601) >= $timestamp) | {timestamp: .metadata.creationTimestamp, type: .type, reason: .reason, message: .message}'
     ls kraken.report
     #sed -n '/{/,/^}$/p' kraken.report |jq .telemetry.scenarios[0] | tee $(results.KRKN_OUTPUT.path)
-    echo -n "${name}" | tee $(results.KRKN_OUTPUT.path)
+    echo -n "${TEST}" | tee $(results.KRKN_OUTPUT.path)
     #echo -n "[\"linux\",\"mac\",\"windows\"]" | tee $(results.KRKN_OUTPUT.path)         
 
 
