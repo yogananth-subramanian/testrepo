@@ -74,6 +74,9 @@ spec:
             value: main
           - name: pathInRepo
             value: integration-tests/step-deploy-krkn.yaml
+      results:
+        - name: KRKN_OUTPUT
+          type: string            
       params:
         - name: KUBECONFIG
           value: "/credentials/$(steps.get-kubeconfig.results.kubeconfig)"

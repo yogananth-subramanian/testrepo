@@ -97,9 +97,6 @@ spec:
           value: $(tasks.provision-eaas-space.results.secretRef)
         - name: clusterName
           value: "$(tasks.provision-cluster.results.clusterName)"
-      results:
-        - name: KRKN_OUTPUT
-          type: string                            
       matrix:
         params:
         - name: chaostest
@@ -115,6 +112,9 @@ spec:
             value: main
           - name: pathInRepo
             value: integration-tests/task-run-krkn-perf-matrix.yaml
+      results:
+        - name: KRKN_OUTPUT
+          type: string               
     - name: summarize-result
       runAfter:
         - run-krkn1
