@@ -10,7 +10,6 @@ spec:
       type: string      
   results:
     - name: TEST_TASK_OUTPUT
-      type: string 
   steps:
     - name: step1
       ref:

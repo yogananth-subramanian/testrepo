@@ -20,6 +20,6 @@ spec:
   script: |
     #!/bin/env bash
     echo "in pipeline ${name}"
-    #echo -n "[\"$(params.name)\"]" | tee $(results.TEST_TASK_OUTPUT.path)
+    #echo -n "[\"${name}\"]" | tee $(results.TEST_TASK_OUTPUT.path)
     echo -n "${name}" | tee $(results.TEST_TASK_OUTPUT.path)
     #echo -n "[\"linux\",\"mac\",\"windows\"]" | tee $(results.TEST_TASK_OUTPUT.path)  
