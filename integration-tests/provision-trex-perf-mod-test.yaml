@@ -114,7 +114,7 @@ spec:
             value: integration-tests/task-run-krkn-perf-matrix.yaml
     - name: summarize-result
       runAfter:
-        - run-krkn
+        - run-krkn1
       params:
         - name: krkn-result
           value: $(tasks.run-krkn1.results.KRKN_OUTPUT[*])         
