@@ -48,7 +48,7 @@ spec:
         - pipepline-task1
       params:
         - name: myname
-          value: $(tasks.pipepline-task1.results.TEST_TASK_OUTPUT[*])         
+          value: $(tasks.pipepline-task2.results.TEST_TASK_OUTPUT1[*])         
       taskSpec:
         params:
           - name: myname
@@ -66,7 +66,7 @@ spec:
         - pipepline-task2
       params:
         - name: krkn-result
-          value: $(tasks.pipepline-task1.results.TEST_TASK_OUTPUT[*])         
+          value: $(tasks.pipepline-task2.results.TEST_TASK_OUTPUT1[*])         
       taskSpec:
         params:
           - name: krkn-result
@@ -84,7 +84,7 @@ spec:
         - name: aggregateTasksStatus
           value: "$(tasks.status)"
         - name: krkn-result
-          value: $(tasks.pipepline-task1.results.TEST_TASK_OUTPUT[*])            
+          value: $(tasks.pipepline-task2.results.TEST_TASK_OUTPUT1[*])            
       taskSpec:
         results:
           - name: TEST_OUTPUT
