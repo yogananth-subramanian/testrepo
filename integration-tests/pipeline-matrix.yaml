@@ -84,7 +84,7 @@ spec:
         - name: aggregateTasksStatus
           value: "$(tasks.status)"
         - name: krkn-result
-          value: $(tasks.pipepline-task.results.TEST_TASK_OUTPUT[*])            
+          value: $(tasks.pipepline-task1.results.TEST_TASK_OUTPUT[*])            
       taskSpec:
         results:
           - name: TEST_OUTPUT
