@@ -100,7 +100,7 @@ spec:
       matrix:
         params:
         - name: chaostest
-          value: $(tasks.deploy-app-krkn.results.chaos_test_namespace[*])
+          value: $(params.chaostest[*])
         - name: url
           value: $(params.chaostest[*])
       taskRef:
