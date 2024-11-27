@@ -63,6 +63,8 @@ spec:
           value: $(params.SNAPSHOT)
         - name: ocmSecretRef
           value: ocm
+        - name: KUBECONFIG
+          value: "/credentials/$(steps.get-kubeconfig.results.kubeconfig)"          
         - name: credentials
           value: credentials
         - name: chaostest

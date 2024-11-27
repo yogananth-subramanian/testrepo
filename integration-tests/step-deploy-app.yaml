@@ -13,6 +13,8 @@ spec:
       description: Name of a secret containing OCM credentials.
     - name: credentials
       description: A volume to which the remote cluster credentials will be written.
+    - name: KUBECONFIG
+      description: Path to Kubeconfig secret      
   results:
     - name: APP_URL
       description: APP URL
@@ -24,7 +26,7 @@ spec:
       description: Chaos test namespace                    
   env:
     - name: KUBECONFIG
-      value: "/credentials/$(steps.get-kubeconfig.results.kubeconfig)"
+      value: $(params.KUBECONFIG)
     - name: CHAOS_TEST
       value: "$(params.chaostest)"                
     - name: SNAPSHOT
