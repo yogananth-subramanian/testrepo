@@ -112,22 +112,22 @@ spec:
             value: main
           - name: pathInRepo
             value: integration-tests/task-run-krkn-perf-matrix.yaml
-    - name: summarize-result
-      runAfter:
-        - deploy-app-krkn
-        - run-krkn1
-      params:
-        - name: krkn-result
-          value: $(tasks.run-krkn1.results.KRKN_OUTPUT[*])         
-      taskSpec:
-        params:
-          - name: krkn-result
-            type: array
-        steps:
-          - name: step1
-            image: registry.access.redhat.com/ubi8/ubi
-            args: ["$(params.krkn-result[*])"]
-            script: |
-              #!/bin/env bash
-              printf "%s\n" "$@"          
+#    - name: summarize-result
+#      runAfter:
+#        - deploy-app-krkn
+#        - run-krkn1
+#      params:
+#        - name: krkn-result
+#          value: $(tasks.run-krkn1.results.KRKN_OUTPUT[*])         
+#      taskSpec:
+#        params:
+#          - name: krkn-result
+#            type: array
+#        steps:
+#          - name: step1
+#            image: registry.access.redhat.com/ubi8/ubi
+#            args: ["$(params.krkn-result[*])"]
+#            script: |
+#              #!/bin/env bash
+#              printf "%s\n" "$@"          
                                             
