@@ -80,7 +80,7 @@ spec:
     sleep 60
     oc apply  -f /tmp/templates/secrets-template.json
     oc apply   -f /tmp/templates/service-template.json
-    sleep 60
+    sleep 300
     oc expose service trex
     oc patch route trex -p '{"spec":{"tls":{"termination":"passthrough"}}}'
     oc get  all
