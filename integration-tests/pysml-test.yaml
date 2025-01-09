@@ -143,7 +143,17 @@ spec:
             image_tag=$(echo ${rev#*:})
             image_rep=$(echo ${rev%:*})
             echo ${REPO_IMG}
-
+            
+            py_image=${REPO_IMG}
+            oc --kubeconfig /tmp/cfg  run pod-pysample --image=${py_image} --port=8081 --overrides='{"apiVersion":"v1","spec":{"containers":[{"name":"pod-pysample","image":"'$py_image'","ports":[{"containerPort":8081}],"securityContext":{"allowPrivilegeEscalation":false,"capabilities":{"drop":["ALL"]},"runAsNonRoot":true,"seccompProfile":{"type":"RuntimeDefault"}}}]}}'
+            oc --kubeconfig /tmp/cfg  expose pod pod-pysample  --port 8081
+            oc --kubeconfig /tmp/cfg  oc expose service pod-pysample
+            sleep 60
+            oc get --kubeconfig /tmp/cfg all
+            oc get --kubeconfig /tmp/cfg events
+            oc describe --kubeconfig /tmp/cfg pod pod-pysample
+            oc logs --kubeconfig /tmp/cfg pod-pysample
+            
             if [ -z $(params.HR_TEST_NAME) ]
             then
               echo '$(params.SNAPSHOT)'|jq -r .components[].name |  tr -d '\n\t' | tee $(results.test_name.path)
