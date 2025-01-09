@@ -152,8 +152,8 @@ spec:
             sleep 60
             oc get --kubeconfig /tmp/cfg all
             oc get --kubeconfig /tmp/cfg events
-            oc describe --kubeconfig /tmp/cfg pod pod-pysample
-            oc logs --kubeconfig /tmp/cfg pod-pysample
+            oc describe --kubeconfig /tmp/cfg pod -l app=pysample-deployment
+            oc logs --kubeconfig /tmp/cfg -l app=pysample-deployment
             oc get --kubeconfig /tmp/cfg  svc,route
             oc get  --kubeconfig /tmp/cfg deploy
             
