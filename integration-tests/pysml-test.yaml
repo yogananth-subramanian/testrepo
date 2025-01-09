@@ -127,6 +127,7 @@ spec:
                   key: kubeconfig
           script: |
             #!/usr/bin/env bash
+            dnf -y install jq
             cat <<< "$KUBECONFIG_VALUE" > /tmp/cfg
             export KUBECONFIG=/tmp/cfg
 
