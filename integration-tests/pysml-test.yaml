@@ -187,13 +187,13 @@ spec:
             #!/usr/bin/env bash
             cat <<< "$KUBECONFIG_VALUE" > /tmp/cfg
             export KUBECONFIG=/tmp/cfg
-            oc port-forward --kubeconfig /tmp/cfg svc/pysample-service 8080:8000                        
+            oc port-forward --kubeconfig /tmp/cfg svc/pysample-service 8080:8081                       
         steps:
         - image: quay.io/yogananth_subramanian/curl-yq-jq
           name: check-regression
           script: |
             set -x
-            export APP_URL=https://127.0.0.1:8080
+            export APP_URL=http://127.0.0.1:8080
             curl -v ${APP_URL}
             sleep 30
       runAfter:
