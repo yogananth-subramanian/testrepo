@@ -170,28 +170,8 @@ spec:
               echo -n '$(params.HR_REG_VAR)' | tee $(results.reg_var.path)
             fi    
 
-    - name: perf-benchmark 
-      params:
-        - name: test_name
-          value: $(tasks.deploy-app.results.test_name)
-        - name: reg_var
-          value: $(tasks.deploy-app.results.reg_var)
-        - name: HORREUM_COFIG_SET
-          value: $(tasks.extract-secrets.results.HORREUM_COFIG_SET)
-        - name: HORREUM_PASSWORD
-          value: $(tasks.extract-secrets.results.HORREUM_PASSWORD)
-        - name: HORREUM_URI
-          value: $(tasks.extract-secrets.results.HORREUM_URI)
-        - name: HORREUM_USER
-          value: $(tasks.extract-secrets.results.HORREUM_USER)           
+    - name: perf-benchmark
       taskSpec:
-        params:
-          - name: test_name
-          - name: reg_var
-          - name: HORREUM_COFIG_SET
-          - name: HORREUM_PASSWORD
-          - name: HORREUM_URI
-          - name: HORREUM_USER
         sidecars:
         - name: kube-proxy
           image: registry.redhat.io/openshift4/ose-cli:latest
@@ -216,7 +196,6 @@ spec:
             export APP_URL=https://127.0.0.1:8080
             curl -v ${APP_URL}
             sleep 30
-
       runAfter:
         - deploy-app
   finally:
