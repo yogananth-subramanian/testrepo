@@ -145,9 +145,10 @@ spec:
             echo ${REPO_IMG}
             
             py_image=${REPO_IMG}
-            oc --kubeconfig /tmp/cfg  run pod-pysample --image=${py_image} --port=8081 --overrides='{"apiVersion":"v1","spec":{"containers":[{"name":"pod-pysample","image":"'$py_image'","ports":[{"containerPort":8081}],"securityContext":{"allowPrivilegeEscalation":false,"capabilities":{"drop":["ALL"]},"runAsNonRoot":true,"seccompProfile":{"type":"RuntimeDefault"}}}]}}'
-            oc --kubeconfig /tmp/cfg  expose pod pod-pysample  --port 8081
-            oc --kubeconfig /tmp/cfg  expose service pod-pysample
+            # oc --kubeconfig /tmp/cfg  run pod-pysample --image=${py_image} --port=8081 --overrides='{"apiVersion":"v1","spec":{"containers":[{"name":"pod-pysample","image":"'$py_image'","ports":[{"containerPort":8081}],"securityContext":{"allowPrivilegeEscalation":false,"capabilities":{"drop":["ALL"]},"runAsNonRoot":true,"seccompProfile":{"type":"RuntimeDefault"}}}]}}'
+            # oc --kubeconfig /tmp/cfg  expose pod pod-pysample  --port 8081
+            oc --kubeconfig /tmp/cfg create deployment pysample-deployment --image=${py_image}  --port=8081
+            oc --kubeconfig /tmp/cfg expose deployment pysample-deployment --port=8081 --name=pysample-service
             sleep 60
             oc get --kubeconfig /tmp/cfg all
             oc get --kubeconfig /tmp/cfg events
