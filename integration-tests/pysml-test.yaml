@@ -154,6 +154,7 @@ spec:
             oc describe --kubeconfig /tmp/cfg pod pod-pysample
             oc logs --kubeconfig /tmp/cfg pod-pysample
             oc get --kubeconfig /tmp/cfg  svc,route
+            oc get  --kubeconfig /tmp/cfg deploy
             
             if [ -z $(params.HR_TEST_NAME) ]
             then
