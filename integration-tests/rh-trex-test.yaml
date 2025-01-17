@@ -95,7 +95,7 @@ spec:
               else
                 horreum_api_key=$(oc get secret horreum -o jsonpath='{.data.horreum_api_key}' | base64 --decode)
               fi
-              echo -n "${horreum_api_key}" | tee $(results.HORREUM_API_KEY.path)
+              echo -n "${horreum_api_key}" > $(results.HORREUM_API_KEY.path)
               echo -n "${horreum_sec_set}" | tee $(results.HORREUM_COFIG_SET.path)                   
     - name: deploy-app
       runAfter: [provision-env]
@@ -175,10 +175,10 @@ spec:
             mkdir -p /tmp/templates/
             for i in $(ls templates/*yml); do j=${i#*/}; outf=${j%.*};oc process --kubeconfig /tmp/cfg --filename="$i" --local="true" --ignore-unknown-parameters="true" --param="ENVIRONMENT"=development --param="GLOG_V"=10  --param="DATABASE_HOST"=trex-db.$(oc project --short) --param="DATABASE_NAME"=rhtrex  --param="DATABASE_PASSWORD"=foobar-bizz-buzz  --param="DATABASE_PORT"=5432 --param="DATABASE_USER"=trex  --param="DATABASE_SSLMODE"=disable --param="ENABLE_SENTRY"=false --param="SENTRY_KEY"=TODO --param="JWKS_URL"=https://sso.redhat.com/auth/realms/redhat-external/protocol/openid-connect/certs  --param="OCM_SERVICE_CLIENT_ID"=${CLIENT_ID} --param="OCM_SERVICE_CLIENT_SECRET"=${CLIENT_SEC}  --param="OCM_BASE_URL"=https://api.integration.openshift.com --param="IMAGE_REGISTRY="$image_reg --param="IMAGE_REPOSITORY="$image_rep --param="IMAGE_TAG="$image_tag  > /tmp/templates/${outf}.json; done
             oc apply --kubeconfig /tmp/cfg  -f /tmp/templates/db-template.json
-            sleep 60
+            oc wait --for=condition=Ready --timeout=300s pod --selector name=trex-db
             oc apply --kubeconfig /tmp/cfg  -f /tmp/templates/secrets-template.json
             oc apply --kubeconfig /tmp/cfg  -f /tmp/templates/service-template.json
-            sleep 60
+            oc wait --for=condition=Ready --timeout=300s pod --selector app=trex
             oc get --kubeconfig /tmp/cfg all
             oc get --kubeconfig /tmp/cfg events
             oc describe --kubeconfig /tmp/cfg pod -l app=trex
