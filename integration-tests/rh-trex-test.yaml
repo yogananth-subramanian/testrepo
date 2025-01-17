@@ -49,7 +49,6 @@ spec:
                 value: "$(context.pipelineRun.uid)"
             script: |
               #!/bin/bash
-              set -ex
               set -o pipefail
       
               cat <<EOF > space_request.yaml
