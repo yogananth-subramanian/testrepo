@@ -264,7 +264,7 @@ spec:
               test_name=$(params.test_name)
               reg_var=$(params.reg_var)
               api_key=$(params.HORREUM_API_KEY)
-              curl -k -s -v ${HORREUM_URI}'/api/run/data?start=$.startTime&stop=$.endTime&test='$test_name -X POST -H 'Content-Type: application/json' -H 'X-Horreum-API-Key: '${api_key}  -d @/workspace/output.json
+              curl -k -s ${HORREUM_URI}'/api/run/data?start=$.startTime&stop=$.endTime&test='$test_name -X POST -H 'Content-Type: application/json' -H 'X-Horreum-API-Key: '${api_key}  -d @/workspace/output.json
               testid=$(curl -s -k -X GET  ${HORREUM_URI}'/api/test/byName/'$test_name |jq -r .id)
               varid=$(curl -s -k -X GET  ${HORREUM_URI}'/api/alerting/variables?test='$testid |jq -r --arg regvar "$reg_var" '.[] | select(.name==$regvar)| .id ')
               changes=`curl -s -k -X GET ${HORREUM_URI}'/api/alerting/changes?var='$varid  |jq  '.| length'`
