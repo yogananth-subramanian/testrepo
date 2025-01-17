@@ -202,7 +202,7 @@ spec:
         - name: HORREUM_COFIG_SET
           value: $(tasks.extract-secrets.results.HORREUM_COFIG_SET)
         - name: HORREUM_API_KEY
-          value: $(tasks.extract-secrets.results.HORREUM_PASSWORD)
+          value: $(tasks.extract-secrets.results.HORREUM_API_KEY)
         - name: HORREUM_URI
           value: $(params.HORREUM_URI)
       taskSpec:
