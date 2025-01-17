@@ -207,15 +207,12 @@ spec:
           value: $(tasks.extract-secrets.results.HORREUM_COFIG_SET)
         - name: HORREUM_API_KEY
           value: $(tasks.extract-secrets.results.HORREUM_API_KEY)
-        - name: HORREUM_URI
-          value: $(params.HORREUM_URI)
       taskSpec:
         params:
           - name: test_name
           - name: reg_var
           - name: HORREUM_COFIG_SET
           - name: HORREUM_API_KEY
-          - name: HORREUM_URI
         sidecars:
         - name: port-forward
           image: registry.redhat.io/openshift4/ose-cli:latest
@@ -253,6 +250,9 @@ spec:
             cat /workspace/output.json
         - image: quay.io/yogananth_subramanian/curl-yq-jq
           name: check-regression
+          env:
+            - name: HORREUM_URI
+              value: $(params.HORREUM_URI)
           script: |
             set -x
             horreum_sec_set=$(params.HORREUM_COFIG_SET)
@@ -263,11 +263,11 @@ spec:
               cat /workspace/output.json
               test_name=$(params.test_name)
               reg_var=$(params.reg_var)
-              KEYCLOAK_URI=$(curl -s -k -X GET  ${HORREUM_URI}/api/config/keycloak|jq -r .url)
-              curl -k -s -v ${HORREUM_URI}'/api/run/data?start=$.startTime&stop=$.endTime&test='$test_name -X POST -H 'Content-Type: application/json' -H 'X-Horreum-API-Key: '${HORREUM_API_KEY}  -d @/workspace/output.json
-              testid=$(curl -s -k -X GET  ${HORREUM_URI}'/api/test/byName/'$test_name -H 'X-Horreum-API-Key: '${HORREUM_API_KEY} |jq -r .id)
-              varid=$(curl -s -k -X GET  ${HORREUM_URI}'/api/alerting/variables?test='$testid -H 'X-Horreum-API-Key: '${HORREUM_API_KEY}|jq -r --arg regvar "$reg_var" '.[] | select(.name==$regvar)| .id ')
-              changes=`curl -s -k -X GET ${HORREUM_URI}'/api/alerting/changes?var='$varid  -H 'X-Horreum-API-Key: '${HORREUM_API_KEY}|jq  '.| length'`
+              api_key=$(HORREUM_API_KEY)
+              curl -k -s -v ${HORREUM_URI}'/api/run/data?start=$.startTime&stop=$.endTime&test='$test_name -X POST -H 'Content-Type: application/json' -H 'X-Horreum-API-Key: '${api_key}  -d @/workspace/output.json
+              testid=$(curl -s -k -X GET  ${HORREUM_URI}'/api/test/byName/'$test_name -H 'X-Horreum-API-Key: '${api_key} |jq -r .id)
+              varid=$(curl -s -k -X GET  ${HORREUM_URI}'/api/alerting/variables?test='$testid -H 'X-Horreum-API-Key: '${api_key}|jq -r --arg regvar "$reg_var" '.[] | select(.name==$regvar)| .id ')
+              changes=`curl -s -k -X GET ${HORREUM_URI}'/api/alerting/changes?var='$varid  -H 'X-Horreum-API-Key: '${api_key}|jq  '.| length'`
               if [ -z  $changes ] || [ $changes -gt 0  ] ;then echo "Regression check failed";exit 1;fi                  
             fi 
       runAfter:
