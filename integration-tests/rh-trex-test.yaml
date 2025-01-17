@@ -13,7 +13,7 @@ spec:
       default: '{"components": [{"name":"test-app", "containerImage": "quay.io/example/repo:latest"}]}'
       type: string
     - description: 'Horreum Test Name'
-      name: HR_TEST_NAME
+      name:   
       default: ""
       type: string      
     - description: 'Horreum regression variable'
@@ -243,7 +243,7 @@ spec:
             chmod +x /tmp/ocm
             /tmp/ocm login --token=${OCM_TOKEN} --url=https://127.0.0.1:8080 --debug
             export BASE_URL=https://127.0.0.1:8080
-            wget -O /tmp/script.js https://raw.githubusercontent.com/yogananth-subramanian/testrepo/refs/heads/main/integration-tests/rhtap-perf-k6-test.js
+            wget -O /tmp/script.js https://raw.githubusercontent.com/yogananth-subramanian/rh-trex/main/.tekton/rhtap-perf-k6-test.js
             echo -n `/tmp/ocm token`>/tmp/token
             k6 run /tmp/script.js
             cat /workspace/output.json
