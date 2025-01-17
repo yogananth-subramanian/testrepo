@@ -19,7 +19,11 @@ spec:
     - description: 'Horreum regression variable'
       name: HR_REG_VAR
       default: ""
-      type: string        
+      type: string
+    - description: 'Horreum Test Name'
+      name: HR_TEST_NAME
+      default: ""
+      type: string                  
     - description: 'Horreum url'
       name: HORREUM_URI
       default: "https://horreum.corp.redhat.com"
