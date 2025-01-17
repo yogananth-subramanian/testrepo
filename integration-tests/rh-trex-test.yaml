@@ -13,20 +13,12 @@ spec:
       default: '{"components": [{"name":"test-app", "containerImage": "quay.io/example/repo:latest"}]}'
       type: string
     - description: 'Horreum Test Name'
-      name:   
+      name: HR_TEST_NAME
       default: ""
       type: string      
     - description: 'Horreum regression variable'
       name: HR_REG_VAR
       default: ""
-      type: string
-    - description: 'Horreum Test Name'
-      name: HR_TEST_NAME
-      default: ""
-      type: string                  
-    - description: 'Horreum url'
-      name: HORREUM_URI
-      default: "https://horreum.corp.redhat.com"
       type: string        
   tasks:
     - name: provision-env
@@ -78,7 +70,11 @@ spec:
     - name: extract-secrets
       taskSpec:
         results:
-          - name: HORREUM_API_KEY
+          - name: HORREUM_PASSWORD
+            type: string
+          - name: HORREUM_URI
+            type: string
+          - name: HORREUM_USER
             type: string
           - name: HORREUM_COFIG_SET
             type: string                       
@@ -88,14 +84,20 @@ spec:
             script: |
               #!/bin/bash
               horreum_sec_set='true'
-              horreum_api_key=''
+              horreum_password=''
+              horreum_uri=''
+              horreum_user=''
               oc get secret horreum
               if [ $? -ne 0 ]; then
                 horreum_sec_set='false'
               else
-                horreum_api_key=$(oc get secret horreum -o jsonpath='{.data.horreum_api_key}' | base64 --decode)
+                horreum_password=$(oc get secret horreum -o jsonpath='{.data.horreum_password}' | base64 --decode)
+                horreum_uri=$(oc get secret horreum -o jsonpath='{.data.horreum_uri}' | base64 --decode)
+                horreum_user=$(oc get secret horreum -o jsonpath='{.data.horreum_user}' | base64 --decode)
               fi
-              echo -n "${horreum_api_key}" | tee $(results.HORREUM_API_KEY.path)
+              echo -n "${horreum_password}" | tee $(results.HORREUM_PASSWORD.path)
+              echo -n "${horreum_uri}" | tee $(results.HORREUM_URI.path)
+              echo -n "${horreum_user}" | tee $(results.HORREUM_USER.path)                
               echo -n "${horreum_sec_set}" | tee $(results.HORREUM_COFIG_SET.path)                   
     - name: deploy-app
       runAfter: [provision-env]
@@ -165,7 +167,7 @@ spec:
             REPO_URL=$(echo $SNAPSHOT | jq -r '.components[] | .source.git.url')
             REPO_COMMIT=$(echo $SNAPSHOT | jq -r '.components[] | .source.git.revision')
             REPO_IMG=$(echo $SNAPSHOT | jq -r '.components[] | .containerImage')
-            GIT_SSL_NO_VERIFY=true git clone $REPO_URL $TARGET_COMPONENT_NAME
+            git clone $REPO_URL $TARGET_COMPONENT_NAME
             cd $TARGET_COMPONENT_NAME
             git checkout $REPO_COMMIT
             rev=$(echo ${REPO_IMG#*/})
@@ -205,14 +207,20 @@ spec:
           value: $(tasks.deploy-app.results.reg_var)
         - name: HORREUM_COFIG_SET
           value: $(tasks.extract-secrets.results.HORREUM_COFIG_SET)
-        - name: HORREUM_API_KEY
-          value: $(tasks.extract-secrets.results.HORREUM_API_KEY)
+        - name: HORREUM_PASSWORD
+          value: $(tasks.extract-secrets.results.HORREUM_PASSWORD)
+        - name: HORREUM_URI
+          value: $(tasks.extract-secrets.results.HORREUM_URI)
+        - name: HORREUM_USER
+          value: $(tasks.extract-secrets.results.HORREUM_USER)           
       taskSpec:
         params:
           - name: test_name
           - name: reg_var
           - name: HORREUM_COFIG_SET
-          - name: HORREUM_API_KEY
+          - name: HORREUM_PASSWORD
+          - name: HORREUM_URI
+          - name: HORREUM_USER
         sidecars:
         - name: port-forward
           image: registry.redhat.io/openshift4/ose-cli:latest
@@ -244,15 +252,12 @@ spec:
             chmod +x /tmp/ocm
             /tmp/ocm login --token=${OCM_TOKEN} --url=https://127.0.0.1:8080 --debug
             export BASE_URL=https://127.0.0.1:8080
-            wget -O /tmp/script.js https://raw.githubusercontent.com/yogananth-subramanian/rh-trex/main/.tekton/rhtap-perf-k6-test.js
+            wget -O /tmp/script.js https://raw.githubusercontent.com/openshift-online/rh-trex/refs/heads/main/.tekton/rhtap-perf-k6-test.js
             echo -n `/tmp/ocm token`>/tmp/token
             k6 run /tmp/script.js
             cat /workspace/output.json
         - image: quay.io/yogananth_subramanian/curl-yq-jq
           name: check-regression
-          env:
-            - name: HORREUM_URI
-              value: $(params.HORREUM_URI)
           script: |
             set -x
             horreum_sec_set=$(params.HORREUM_COFIG_SET)
@@ -263,11 +268,12 @@ spec:
               cat /workspace/output.json
               test_name=$(params.test_name)
               reg_var=$(params.reg_var)
-              api_key=$(HORREUM_API_KEY)
-              curl -k -s -v ${HORREUM_URI}'/api/run/data?start=$.startTime&stop=$.endTime&test='$test_name -X POST -H 'Content-Type: application/json' -H 'X-Horreum-API-Key: '${api_key}  -d @/workspace/output.json
-              testid=$(curl -s -k -X GET  ${HORREUM_URI}'/api/test/byName/'$test_name -H 'X-Horreum-API-Key: '${api_key} |jq -r .id)
-              varid=$(curl -s -k -X GET  ${HORREUM_URI}'/api/alerting/variables?test='$testid -H 'X-Horreum-API-Key: '${api_key}|jq -r --arg regvar "$reg_var" '.[] | select(.name==$regvar)| .id ')
-              changes=`curl -s -k -X GET ${HORREUM_URI}'/api/alerting/changes?var='$varid  -H 'X-Horreum-API-Key: '${api_key}|jq  '.| length'`
+              KEYCLOAK_URI=$(curl -s -k -X GET  ${HORREUM_URI}/api/config/keycloak|jq -r .url)
+              TOKEN=$(curl -s  -k  ${KEYCLOAK_URI}/realms/horreum/protocol/openid-connect/token   -d "username=$HORREUM_USER"  -d "password=$HORREUM_PASSWORD" -d 'grant_type=password' -d 'client_id=horreum-ui' | jq -r .access_token)
+              curl -k -s -v ${HORREUM_URI}'/api/run/data?start=$.startTime&stop=$.endTime&test='$test_name -X POST -H 'Authorization: Bearer '${TOKEN} -H 'Content-Type: application/json'  -d @/workspace/output.json
+              testid=$(curl -s -k -X GET  ${HORREUM_URI}'/api/test/byName/'$test_name|jq -r .id)
+              varid=$(curl -s -k -X GET  ${HORREUM_URI}'/api/alerting/variables?test='$testid|jq -r --arg regvar "$reg_var" '.[] | select(.name==$regvar)| .id ')
+              changes=`curl -s -k -X GET ${HORREUM_URI}'/api/alerting/changes?var='$varid  |jq  '.| length'`
               if [ -z  $changes ] || [ $changes -gt 0  ] ;then echo "Regression check failed";exit 1;fi                  
             fi 
       runAfter:
