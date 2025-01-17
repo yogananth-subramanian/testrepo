@@ -95,7 +95,7 @@ spec:
               else
                 horreum_api_key=$(oc get secret horreum -o jsonpath='{.data.horreum_api_key}' | base64 --decode)
               fi
-              echo -n "${horreum_api_key}" > tee $(results.HORREUM_API_KEY.path)
+              echo -n "${horreum_api_key}" > $(results.HORREUM_API_KEY.path)
               echo -n "${horreum_sec_set}" | tee $(results.HORREUM_COFIG_SET.path)                   
     - name: deploy-app
       runAfter: [provision-env]
@@ -254,7 +254,7 @@ spec:
             - name: HORREUM_URI
               value: $(params.HORREUM_URI)
           script: |
-            #!/usr/bin/env bash
+            set -x
             horreum_sec_set=$(params.HORREUM_COFIG_SET)
             if [ ${horreum_sec_set} == 'false' ]; then
               echo "Horreum config not set"
