@@ -167,7 +167,7 @@ spec:
             REPO_URL=$(echo $SNAPSHOT | jq -r '.components[] | .source.git.url')
             REPO_COMMIT=$(echo $SNAPSHOT | jq -r '.components[] | .source.git.revision')
             REPO_IMG=$(echo $SNAPSHOT | jq -r '.components[] | .containerImage')
-            git clone $REPO_URL $TARGET_COMPONENT_NAME
+            GIT_SSL_NO_VERIFY=true git clone $REPO_URL $TARGET_COMPONENT_NAME
             cd $TARGET_COMPONENT_NAME
             git checkout $REPO_COMMIT
             rev=$(echo ${REPO_IMG#*/})
