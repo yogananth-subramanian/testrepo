@@ -263,7 +263,7 @@ spec:
               cat /workspace/output.json
               test_name=$(params.test_name)
               reg_var=$(params.reg_var)
-              api_key=$(HORREUM_API_KEY)
+              api_key=$(params.HORREUM_API_KEY)
               curl -k -s -v ${HORREUM_URI}'/api/run/data?start=$.startTime&stop=$.endTime&test='$test_name -X POST -H 'Content-Type: application/json' -H 'X-Horreum-API-Key: '${api_key}  -d @/workspace/output.json
               testid=$(curl -s -k -X GET  ${HORREUM_URI}'/api/test/byName/'$test_name -H 'X-Horreum-API-Key: '${api_key} |jq -r .id)
               varid=$(curl -s -k -X GET  ${HORREUM_URI}'/api/alerting/variables?test='$testid -H 'X-Horreum-API-Key: '${api_key}|jq -r --arg regvar "$reg_var" '.[] | select(.name==$regvar)| .id ')
