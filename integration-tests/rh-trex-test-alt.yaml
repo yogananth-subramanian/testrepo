@@ -226,7 +226,7 @@ spec:
             - name: OCM_TOKEN
               valueFrom:
                 secretKeyRef:
-                  name: my-ocm-secrets
+                  name: ocm
                   key: ocmtoken
           script: |
             #!/usr/bin/env bash
