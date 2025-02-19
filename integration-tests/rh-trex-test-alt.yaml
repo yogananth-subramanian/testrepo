@@ -196,7 +196,16 @@ spec:
             else
               echo -n '$(params.HR_REG_VAR)' | tee $(results.reg_var.path)
             fi             
-    - name: perf-benchmark 
+    - name: perf-benchmark
+      params:
+        - name: test_name
+          value: $(tasks.deploy-app.results.test_name)
+        - name: reg_var
+          value: $(tasks.deploy-app.results.reg_var)
+        - name: HORREUM_COFIG_SET
+          value: $(tasks.extract-secrets.results.HORREUM_COFIG_SET)
+        - name: HORREUM_API_KEY
+          value: $(tasks.extract-secrets.results.HORREUM_API_KEY)     
       taskSpec:
         steps:          
         - image: registry.redhat.io/openshift4/ose-cli:latest
