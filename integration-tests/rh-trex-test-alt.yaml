@@ -215,12 +215,123 @@ spec:
         - name: HORREUM_API_KEY
           value: $(tasks.extract-secrets.results.HORREUM_API_KEY)     
       taskSpec:
+        params:
+          - name: url        
+          - name: test_name
+          - name: reg_var
+          - name: HORREUM_COFIG_SET
+          - name: HORREUM_API_KEY      
         steps:          
         - image: registry.redhat.io/openshift4/ose-cli:latest
           name: run-perf
           script: |
             #!/usr/bin/env bash
-            echo "In perf"
+
+            # Expose KUBECONFIG for test namespace
+            cat <<< "$KUBECONFIG_VALUE" > /tmp/cfg
+            export KUBECONFIG=/tmp/cfg
+
+            # Create and deploy files needed to run the test
+            wget --no-verbose -O /tmp/script.js https://raw.githubusercontent.com/jhutar/rh-trex/main/.tekton/rhtap-perf-k6-test.js
+            wget --no-verbose -O /tmp/ocm https://github.com/openshift-online/ocm-cli/releases/download/v0.1.65/ocm-linux-amd64
+            chmod +x /tmp/ocm
+            /tmp/ocm login --token=${OCM_TOKEN} --url=$(params.url)
+            /tmp/ocm token > /tmp/token
+            oc create configmap test-runner --from-file=script=/tmp/script.js --from-file=token=/tmp/token
+
+            # Create PVC we will use to store test results
+            cat <<EOF | oc apply -f -
+              apiVersion: v1
+              kind: PersistentVolumeClaim
+              metadata:
+                name: data-pvc
+              spec:
+                accessModes:
+                  - ReadWriteOnce
+                volumeMode: Filesystem
+                resources:
+                  requests:
+                    storage: 100Mi
+            EOF
+
+            # Run the test
+            cat <<EOF | oc apply -f -
+              apiVersion: v1
+              kind: Pod
+              metadata:
+                name: test-runner
+                labels:
+                  app: test-runner
+              spec:
+                restartPolicy: Never
+                volumes:
+                  - name: data
+                    persistentVolumeClaim:
+                      claimName: data-pvc
+                  - name: config
+                    configMap:
+                      name: test-runner
+                containers:
+                  - name: test-runner
+                    image: docker.io/grafana/k6:latest
+                    env:
+                      - name: BASE_URL
+                        value: "$(params.url)"
+                      - name: TOKEN_PATH
+                        value: "/etc/config/token"
+                    volumeMounts:
+                      - name: data
+                        mountPath: /workspace
+                      - name: config
+                        mountPath: /etc/config
+                    args:
+                      - "run"
+                      - "/etc/config/script"
+                    resources:
+                      limits:
+                        cpu: "1"
+                        memory: "1Gi"
+                      requests:
+                        cpu: "1"
+                        memory: "1Gi"
+            EOF
+
+            # Wait for test pod to start and finish and show tail of the output for debugging
+            oc wait --for=condition=Ready --timeout=100s pod --selector app=test-runner
+            oc wait --for=condition=Ready=false --timeout=600s pod --selector app=test-runner
+            oc logs --tail=100 --all-containers=true --ignore-errors=true --max-log-requests=10 --prefix=true --previous=false --timestamps=true --selector app=test-runner
+
+            # Start the pod we use to retrieve the results
+            cat <<EOF | oc apply -f -
+              apiVersion: v1
+              kind: Pod
+              metadata:
+                name: test-server
+                labels:
+                  app: test-server
+              spec:
+                restartPolicy: Never
+                volumes:
+                  - name: data
+                    persistentVolumeClaim:
+                      claimName: data-pvc
+                containers:
+                  - name: test-server
+                    image: registry.access.redhat.com/ubi9/ubi:latest
+                    volumeMounts:
+                      - name: data
+                        mountPath: /workspace
+                    args:
+                      - "sleep"
+                      - "1000"
+            EOF
+
+            # Download result file
+            oc wait --for=condition=Ready --timeout=100s pod/test-server
+            oc cp test-server:/workspace/output.json /workspace/output.json
+            cat /workspace/output.json
+            oc delete pod/test-server
+
       runAfter:
         - deploy-app
         - extract-secrets    
