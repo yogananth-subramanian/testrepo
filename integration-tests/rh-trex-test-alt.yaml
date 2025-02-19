@@ -195,7 +195,13 @@ spec:
               echo -n 'iteration_duration' | tee $(results.reg_var.path)
             else
               echo -n '$(params.HR_REG_VAR)' | tee $(results.reg_var.path)
-            fi             
+            fi
+            # Return the service for the application endpoint
+            port="$(oc get service/trex -o json | jq '.spec.ports[0].port')"
+            endpoint="http://trex.$(oc project --short).svc.cluster.local:${port}"
+            echo "${endpoint}" | tee $(results.APP_URL.path)
+            echo "Application endpoint: ${endpoint}"
+
     - name: perf-benchmark
       params:
         - name: url
