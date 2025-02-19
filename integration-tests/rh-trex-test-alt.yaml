@@ -224,6 +224,19 @@ spec:
         steps:          
         - image: registry.redhat.io/openshift4/ose-cli:latest
           name: run-perf
+          env:
+            - name: KUBECONFIG_VALUE
+              valueFrom:
+                secretKeyRef:
+                  name: "$(tasks.provision-env.results.secretRef)"
+                  key: kubeconfig
+            # Our application uses OCM for authentication, so we need this
+            # https://console.redhat.com/openshift/token
+            - name: OCM_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: my-ocm-secrets
+                  key: ocmtoken
           script: |
             #!/usr/bin/env bash
 
