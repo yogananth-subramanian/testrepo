@@ -210,6 +210,7 @@ spec:
           value: $(tasks.extract-secrets.results.HORREUM_API_KEY)
       taskSpec:
         params:
+          - name: url
           - name: test_name
           - name: reg_var
           - name: HORREUM_COFIG_SET
