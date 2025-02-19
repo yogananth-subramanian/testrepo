@@ -198,6 +198,8 @@ spec:
             fi             
     - name: perf-benchmark
       params:
+        - name: url
+          value: $(tasks.deploy-app.results.APP_URL)
         - name: test_name
           value: $(tasks.deploy-app.results.test_name)
         - name: reg_var
